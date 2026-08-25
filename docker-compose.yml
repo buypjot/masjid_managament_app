@@ -1,0 +1,54 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: masjid_backend
+    ports:
+      - "8011:8011"
+    environment:
+      - DATABASE_URL=postgresql://postgres:Sr%40983683@host.docker.internal:5432/Masjiddesk
+      - ADMIN_USERNAME=Admin
+      - ADMIN_PASSWORD=Sr@983683
+      - SIGNUP_WEBHOOK_URL=https://cliq.zoho.com/api/v2/channelsbyname/webhookmessage/message?zapikey=1001.1082b3c2c08375718988a789389d3023.f0cb869525a1dc04ecab779149be5af4
+      - WEBHOOK_BOT_NAME=Majid_New_Member
+      - OTP_PROVIDER=whatsapp
+      - OTP_API_URL=https://waapi.buypapps.com/v1/message/send-message
+      - OTP_API_KEY=6a936b34e8c1946bdb327d93a61dcfb5a8e18ad0d24a9c2ffc7668f129ed557d8eaac8b77b7e8d62b6ac1a15415a36a31a0ea4626e67e7d2748909b4eb5e0f94
+      - OTP_TEMPLATE_NAME=buyp_play_zone
+      - JWT_SECRET=masjid_management_system_super_secret_jwt_key_2026_buyp
+      - CORS_ORIGINS=https://masjid.amandesk.com,https://masjith.amandesk.com,http://masjid.amandesk.com,http://192.168.10.131:9017,http://localhost:9017,http://127.0.0.1:9017
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=https://masjid.amandesk.com
+    container_name: masjid_frontend
+    ports:
+      - "9017:9017"
+    environment:
+      - VITE_API_BASE_URL=https://masjid.amandesk.com
+    depends_on:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 16M
