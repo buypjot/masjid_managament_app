@@ -193,7 +193,7 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-6 text-xs sm:text-sm">
           
           {/* Profile Photo Section */}
           <div className="bg-slate-50 border border-slate-200/70 rounded-2xl p-4 flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-5">
@@ -215,8 +215,8 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
             </div>
 
             <div className="flex-1 text-center sm:text-left space-y-2">
-              <h4 className="font-extrabold text-slate-900 text-sm">Profile Photo</h4>
-              <p className="text-[11px] text-slate-500 font-medium">
+              <h4 className="font-extrabold text-slate-900 text-sm sm:text-base">Profile Photo</h4>
+              <p className="text-xs text-slate-500 font-medium">
                 Upload a professional avatar image. Recommended size 400x400px.
               </p>
               
@@ -231,9 +231,9 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-sm transition-colors"
+                  className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs sm:text-sm shadow-sm transition-colors"
                 >
-                  <Upload className="w-3.5 h-3.5" />
+                  <Upload className="w-4 h-4" />
                   <span>{activePhoto ? 'Change Photo' : 'Add Photo'}</span>
                 </button>
 
@@ -241,9 +241,9 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                   <button
                     type="button"
                     onClick={handleRemovePhoto}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition-colors"
+                    className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs sm:text-sm transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                     <span>Remove</span>
                   </button>
                 )}
@@ -256,8 +256,8 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
             
             {/* Full Name */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <User className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <User className="w-4 h-4 text-slate-500" />
                 <span>Administrator Full Name *</span>
               </label>
               <input
@@ -267,14 +267,14 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.admin_name}
                 onChange={handleInputChange}
                 placeholder="e.g. Mohamed Ismail"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
             </div>
 
             {/* Admin Role / Designation */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <ShieldCheck className="w-4 h-4 text-slate-500" />
                 <span>Designation / Role</span>
               </label>
               <input
@@ -283,18 +283,18 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.admin_role}
                 onChange={handleInputChange}
                 placeholder="e.g. Masjid Administrator"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
-              <div className="flex flex-wrap gap-1 mt-1.5">
+              <div className="flex flex-wrap gap-1.5 mt-2">
                 {['Masjid Administrator', 'President', 'Secretary', 'Treasurer', 'Trustee', 'Imam'].map((roleItem) => (
                   <button
                     type="button"
                     key={roleItem}
                     onClick={() => setFormData((prev) => ({ ...prev, admin_role: roleItem }))}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-colors cursor-pointer ${
+                    className={`px-3 py-1 rounded-xl text-xs sm:text-[13px] font-bold transition-all cursor-pointer ${
                       formData.admin_role === roleItem
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     {roleItem}
@@ -305,8 +305,8 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
 
             {/* Email */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <Mail className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <Mail className="w-4 h-4 text-slate-500" />
                 <span>Email Address</span>
               </label>
               <input
@@ -315,14 +315,14 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.admin_email}
                 onChange={handleInputChange}
                 placeholder="admin@masjid.org"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
             </div>
 
             {/* Mobile Number */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <Phone className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <Phone className="w-4 h-4 text-slate-500" />
                 <span>Mobile Number</span>
               </label>
               <input
@@ -331,14 +331,14 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.admin_mobile}
                 onChange={handleInputChange}
                 placeholder="+91 98765 43210"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
             </div>
 
             {/* Masjid Name */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <Building2 className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <Building2 className="w-4 h-4 text-slate-500" />
                 <span>Masjid Name</span>
               </label>
               <input
@@ -347,14 +347,14 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.masjid_name}
                 onChange={handleInputChange}
                 placeholder="Ismail Masjid"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
             </div>
 
             {/* City */}
             <div>
-              <label className="block text-slate-700 font-bold mb-1.5 flex items-center space-x-1">
-                <MapPin className="w-3.5 h-3.5 text-slate-500" />
+              <label className="block text-slate-700 font-extrabold text-xs sm:text-sm mb-1.5 flex items-center space-x-1">
+                <MapPin className="w-4 h-4 text-slate-500" />
                 <span>City / Location</span>
               </label>
               <input
@@ -363,7 +363,7 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
                 value={formData.city}
                 onChange={handleInputChange}
                 placeholder="Tenkasi"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-900"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold text-sm text-slate-900"
               />
             </div>
 

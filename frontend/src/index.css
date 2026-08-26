@@ -79,3 +79,13 @@ input::placeholder,textarea::placeholder{color:#9aada6;opacity:1}
 @media(max-width:1023px){.dashboard-theme aside{width:min(86vw,304px)}.dashboard-theme main{min-width:0}}
 @media(max-width:640px){.dashboard-theme [class*="p-8"]{padding:1rem !important}.dashboard-theme [class*="p-6"]{padding:1.125rem !important}.dashboard-theme h1{letter-spacing:-.035em}.dashboard-theme table{min-width:720px}}
 @media(prefers-reduced-motion:reduce){.dashboard-theme *,.dashboard-theme *::before,.dashboard-theme *::after{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+
+/* Global minimum typography scale to eliminate microscopic text across the whole software */
+.dashboard-theme [class*="text-[8px]"],
+.dashboard-theme [class*="text-[9px]"],
+.dashboard-theme [class*="text-[10px]"] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+

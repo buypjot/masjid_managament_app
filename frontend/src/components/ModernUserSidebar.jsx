@@ -99,7 +99,7 @@ export const ModernUserSidebar = () => {
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-500 text-xl shadow-lg shadow-indigo-500/20">🕌</div>
           <div>
             <div className="text-sm font-black tracking-tight text-slate-950">Masjid Desk</div>
-            <div className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-indigo-600">Management Suite</div>
+            <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-indigo-600">Management Suite</div>
           </div>
         </div>
         <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 lg:hidden"><X className="h-5 w-5" /></button>
@@ -108,30 +108,30 @@ export const ModernUserSidebar = () => {
       <button onClick={() => setProfileOpen(true)} className="group mb-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3 text-left transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
         <Avatar src={userInfo?.profile_photo} name={userName} size="md" showStatusDot status="online" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-xs font-black text-slate-950">{userName}</div>
-          <div className="mt-1 flex items-center gap-1 truncate text-[10px] font-bold text-emerald-600"><ShieldCheck className="h-3 w-3" />{userRole}</div>
+          <div className="truncate text-sm font-black text-slate-950">{userName}</div>
+          <div className="mt-0.5 flex items-center gap-1 truncate text-xs font-bold text-emerald-600"><ShieldCheck className="h-3.5 w-3.5 shrink-0" />{userRole}</div>
         </div>
         <ChevronRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-indigo-500" />
       </button>
 
       <div className="mb-4 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-4 text-white shadow-lg shadow-indigo-500/15">
-        <div className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-indigo-100">Current Masjid</div>
-        <div className="mt-1 truncate text-sm font-black">{masjidName}</div>
-        <div className="mt-0.5 truncate text-[11px] font-medium text-indigo-100">{masjidCity}</div>
+        <div className="text-xs font-black uppercase tracking-[0.14em] text-indigo-100">Current Masjid</div>
+        <div className="mt-1 truncate text-base font-black">{masjidName}</div>
+        <div className="mt-0.5 truncate text-xs font-semibold text-indigo-100">{masjidCity}</div>
       </div>
 
       <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
         <div className="mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wider text-slate-500"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Active users</span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-700">{users.length}</span>
+          <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-slate-500"><span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />Active users</span>
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-extrabold text-emerald-700">{users.length}</span>
         </div>
-        <div className="max-h-28 space-y-1.5 overflow-y-auto pr-1">
+        <div className="max-h-32 space-y-1.5 overflow-y-auto pr-1">
           {users.map((u, idx) => {
             const name = u.is_current ? userName : (u.admin_name || u.full_name || u.masjid_name || 'User');
-            return <button key={u.id || idx} onClick={() => setProfileOpen(true)} className={`flex w-full items-center gap-2 rounded-xl p-2 text-left transition ${u.is_current ? 'border border-indigo-100 bg-white shadow-sm' : 'hover:bg-white'}`}>
+            return <button key={u.id || idx} onClick={() => setProfileOpen(true)} className={`flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition ${u.is_current ? 'border border-indigo-100 bg-white shadow-sm' : 'hover:bg-white'}`}>
               <Avatar src={u.is_current ? (userInfo?.profile_photo || u.profile_photo) : u.profile_photo} name={name} size="sm" showStatusDot status="online" />
-              <span className="min-w-0 flex-1"><span className="block truncate text-[10px] font-black text-slate-800">{name}</span><span className="block truncate text-[9px] text-slate-500">{u.is_current ? userRole : (u.admin_role || 'Administrator')}</span></span>
-              {u.is_current && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[8px] font-black text-indigo-600">YOU</span>}
+              <span className="min-w-0 flex-1"><span className="block truncate text-xs font-black text-slate-800">{name}</span><span className="block truncate text-xs font-semibold text-slate-500">{u.is_current ? userRole : (u.admin_role || 'Administrator')}</span></span>
+              {u.is_current && <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-black text-indigo-600">YOU</span>}
             </button>;
           })}
         </div>
@@ -142,17 +142,80 @@ export const ModernUserSidebar = () => {
           const Icon = item.icon;
           const isActive = item.path === location.pathname;
           const open = openSubmenu === item.name;
-          if (!item.subItems) return <NavLink key={item.name} to={item.path} className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-bold transition ${isActive ? 'bg-slate-950 text-white shadow-md shadow-slate-900/10' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}><Icon className="h-4 w-4" /><span>{item.name}</span>{item.name === 'Notifications' && <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" />}</NavLink>;
-          return <div key={item.name}>
-            <button onClick={() => setOpenSubmenu(open ? null : item.name)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold transition ${open ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'}`}><span className="flex items-center gap-3"><Icon className="h-4 w-4" />{item.name}</span>{open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}</button>
-            {open && <div className="ml-5 mt-1 space-y-0.5 border-l border-indigo-100 pl-3">{item.subItems.map((sub) => sub.path ? <NavLink key={sub.name} to={sub.path} className={({ isActive }) => `flex items-center gap-2 rounded-lg px-2.5 py-2 text-[10px] font-semibold transition ${isActive ? 'bg-indigo-100 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}><sub.icon className="h-3.5 w-3.5" />{sub.name}</NavLink> : <div key={sub.name} className="rounded-lg px-2.5 py-2 text-[10px] font-semibold text-slate-400">{sub.name}</div>)}</div>}
-          </div>;
+
+          if (!item.subItems) {
+            return (
+              <NavLink
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs sm:text-[13px] font-extrabold transition ${
+                  isActive
+                    ? 'bg-slate-950 text-white shadow-md shadow-slate-900/10'
+                    : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.name}</span>
+                {item.name === 'Notifications' && (
+                  <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" />
+                )}
+              </NavLink>
+            );
+          }
+
+          return (
+            <div key={item.name}>
+              <button
+                onClick={() => setOpenSubmenu(open ? null : item.name)}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs sm:text-[13px] font-extrabold transition ${
+                  open ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
+                }`}
+              >
+                <span className="flex items-center gap-3">
+                  <Icon className="h-4 w-4" />
+                  {item.name}
+                </span>
+                {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+
+              {open && (
+                <div className="ml-5 mt-1 space-y-1 border-l-2 border-indigo-100 pl-3">
+                  {item.subItems.map((sub) => {
+                    const SubIcon = sub.icon;
+                    return sub.path ? (
+                      <NavLink
+                        key={sub.name}
+                        to={sub.path}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs sm:text-[13px] font-bold transition ${
+                            isActive
+                              ? 'bg-indigo-100 text-indigo-800'
+                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                          }`
+                        }
+                      >
+                        {SubIcon && <SubIcon className="h-4 w-4 shrink-0" />}
+                        <span>{sub.name}</span>
+                      </NavLink>
+                    ) : (
+                      <div
+                        key={sub.name}
+                        className="rounded-lg px-2.5 py-2 text-xs sm:text-[13px] font-semibold text-slate-400"
+                      >
+                        {sub.name}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
         })}
       </nav>
 
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-[10px] text-slate-500">
+      <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
         <div className="flex items-center gap-2 font-bold text-slate-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />System online</div>
-        <div className="mt-1">Secure workspace connected to your live data.</div>
+        <div className="mt-1 font-medium">Secure workspace connected to your live data.</div>
       </div>
     </aside>
   );

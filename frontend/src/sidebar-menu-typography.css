@@ -1,60 +1,43 @@
-/* Sidebar expanded-menu typography.
- * Keeps nested menu labels at the same readable scale as the primary sidebar.
+/* Sidebar typography standards across the whole software.
+ * Ensures menu items and sub-items are clear, legible, and consistently sized.
  */
-.dashboard-theme aside nav ul,
-.dashboard-theme aside nav li,
-.dashboard-theme aside nav [role="menu"],
-.dashboard-theme aside nav [role="menuitem"] {
-  font-size: 14px !important;
+.dashboard-theme aside nav a,
+.dashboard-theme aside nav button {
+  font-size: 13px !important;
   line-height: 1.45 !important;
+  font-weight: 700 !important;
 }
 
-.dashboard-theme aside nav ul a,
-.dashboard-theme aside nav ul button,
-.dashboard-theme aside nav li > a,
-.dashboard-theme aside nav li > button {
-  min-height: 42px !important;
-  padding-top: 10px !important;
-  padding-bottom: 10px !important;
-  font-size: 14px !important;
-  line-height: 20px !important;
+.dashboard-theme aside nav div > div > a,
+.dashboard-theme aside nav div > div > div,
+.dashboard-theme aside nav [class*="pl-3"] a,
+.dashboard-theme aside nav [class*="pl-3"] div {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
   font-weight: 600 !important;
-  letter-spacing: -0.005em !important;
 }
 
-/* Nested/expanded items should not inherit tiny text utilities. */
-.dashboard-theme aside nav ul span,
-.dashboard-theme aside nav ul p,
-.dashboard-theme aside nav ul label,
-.dashboard-theme aside nav ul [class*="text-xs"],
-.dashboard-theme aside nav ul [class*="text-[10px]"],
-.dashboard-theme aside nav ul [class*="text-[11px]"],
-.dashboard-theme aside nav ul [class*="text-[12px]"] {
-  font-size: 14px !important;
-  line-height: 20px !important;
+.dashboard-theme aside nav svg,
+.dashboard-theme aside nav [class*="pl-3"] svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0 !important;
 }
 
-.dashboard-theme aside nav ul svg {
-  width: 17px !important;
-  height: 17px !important;
-  flex: 0 0 17px;
-}
-
-/* Keep indentation while making the expanded menu easier to scan. */
-.dashboard-theme aside nav ul ul a,
-.dashboard-theme aside nav ul ul button {
-  font-size: 14px !important;
-  line-height: 20px !important;
-  min-height: 40px !important;
+/* Eliminate tiny, unreadable text under 12px inside sidebar and cards */
+.dashboard-theme aside [class*="text-[8px]"],
+.dashboard-theme aside [class*="text-[9px]"],
+.dashboard-theme aside [class*="text-[10px]"] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
 }
 
 @media (max-width: 767px) {
-  .dashboard-theme aside nav ul,
-  .dashboard-theme aside nav ul a,
-  .dashboard-theme aside nav ul button,
-  .dashboard-theme aside nav ul span,
-  .dashboard-theme aside nav ul p {
-    font-size: 14px !important;
-    line-height: 20px !important;
+  .dashboard-theme aside nav a,
+  .dashboard-theme aside nav button,
+  .dashboard-theme aside nav div > div > a {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
   }
 }
+
