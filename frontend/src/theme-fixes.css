@@ -1,0 +1,51 @@
+/* Light dashboard dark-background cleanup.
+ * Keeps text readable while removing legacy dark/black UI surfaces from
+ * dashboard navigation, active states, icon containers, and fallback avatars.
+ */
+.dashboard-theme [class*="bg-[#0f172a]"] {
+  background: linear-gradient(135deg, #e8f7f0, #f3fbf7) !important;
+  color: #056044 !important;
+  border-color: #cce8dc !important;
+  box-shadow: 0 6px 16px rgba(8, 127, 91, 0.08) !important;
+}
+
+.dashboard-theme [class*="bg-[#0f172a]"] svg,
+.dashboard-theme [class*="bg-[#0f172a]"] .lucide {
+  color: #087f5b !important;
+}
+
+/* Legacy dark hover utilities must not reintroduce black backgrounds. */
+.dashboard-theme [class*="hover:bg-slate-800"]:hover,
+.dashboard-theme [class*="hover:bg-slate-900"]:hover,
+.dashboard-theme [class*="hover:bg-gray-800"]:hover,
+.dashboard-theme [class*="hover:bg-gray-900"]:hover,
+.dashboard-theme [class*="hover:bg-black"]:hover {
+  background: #eef8f3 !important;
+  color: #056044 !important;
+}
+
+/* Fallback Avatar currently uses a dark slate gradient when no photo exists. */
+.dashboard-theme [class*="from-slate-900"][class*="via-slate-800"] {
+  background: linear-gradient(135deg, #e8f7f0, #d9f1e7) !important;
+  color: #056044 !important;
+  border-color: #cce8dc !important;
+}
+
+.dashboard-theme [class*="from-slate-900"][class*="via-slate-800"] span,
+.dashboard-theme [class*="from-slate-900"][class*="via-slate-800"] svg {
+  color: #056044 !important;
+}
+
+/* Do not allow white icon/text colors to disappear on the new light active states. */
+.dashboard-theme [class*="bg-[#0f172a]"] .text-white,
+.dashboard-theme [class*="bg-[#0f172a]"].text-white {
+  color: #056044 !important;
+}
+
+/* Generic legacy black utility surfaces inside the dashboard. */
+.dashboard-theme [class="bg-black"],
+.dashboard-theme [class="bg-gray-950"],
+.dashboard-theme [class="bg-gray-900"] {
+  background: #ffffff !important;
+  color: #16332a !important;
+}
