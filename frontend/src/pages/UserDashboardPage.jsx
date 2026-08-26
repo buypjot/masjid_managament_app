@@ -4,10 +4,10 @@ import { ModernMasjidDashboard } from '../components/ModernMasjidDashboard';
 
 export const UserDashboardPage = () => {
   return (
-    <div className="min-h-screen bg-[#f5f7fb]">
-      <div className="flex min-h-screen">
+    <div className="dashboard-theme h-screen overflow-hidden bg-[#f5f7fb]">
+      <div className="dashboard-app-content flex h-full min-h-0 overflow-hidden">
         <ModernUserSidebar />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 min-h-0 flex-1 overflow-hidden">
           <ModernMasjidDashboard />
         </div>
       </div>
