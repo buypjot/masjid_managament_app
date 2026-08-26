@@ -101,7 +101,15 @@ export const UserLoginPage = () => {
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-600">Registered Mobile Number</label>
                     <div className="group relative">
                       <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0f766e]" />
-                      <input type="tel" value={mobileNumber} onChange={(e) => { setMobileNumber(e.target.value); if (error) setError(''); }} placeholder="e.g. 919600698893" className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium outline-none transition-all placeholder:text-slate-400 focus:border-[#0f766e] focus:ring-4 focus:ring-emerald-500/10" required />
+                      <input
+                        type="tel"
+                        value={mobileNumber}
+                        onChange={(e) => { setMobileNumber(e.target.value); if (error) setError(''); }}
+                        placeholder="e.g. 919600698893"
+                        className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#0f766e] focus:ring-4 focus:ring-emerald-500/10"
+                        style={{ WebkitTextFillColor: '#0f172a' }}
+                        required
+                      />
                     </div>
                     <p className="mt-2 text-[11px] text-slate-400">Use the mobile number approved during Masjid registration.</p>
                   </motion.div>
