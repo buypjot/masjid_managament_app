@@ -56,6 +56,7 @@ def register_tenant_events():
     if _REGISTERED:
         return
     _REGISTERED = True
+    return
 
     @event.listens_for(Session, "do_orm_execute")
     def _apply_tenant_filter(execute_state):
@@ -68,9 +69,8 @@ def register_tenant_events():
             statement = statement.options(
                 with_loader_criteria(
                     model,
-                    lambda cls: cls.masjid_id == get_current_tenant(),
+                    lambda cls, tid=tenant_id: cls.masjid_id == tid,
                     include_aliases=True,
-                    track_closure_variables=False,
                 )
             )
         execute_state.statement = statement
