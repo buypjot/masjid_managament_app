@@ -49,3 +49,27 @@
   background: #ffffff !important;
   color: #16332a !important;
 }
+
+/* Hero/banner readability: the dashboard uses a deliberately dark gradient hero.
+ * The global light-theme rule changes .text-white to dark text, so restore a
+ * high-contrast white hierarchy only inside this hero section. */
+.dashboard-theme main section[class*="from-slate-950"] .text-white,
+.dashboard-theme main section[class*="from-slate-950"] .text-white * {
+  color: #ffffff !important;
+}
+.dashboard-theme main section[class*="from-slate-950"] .text-indigo-100 {
+  color: #e0e7ff !important;
+}
+.dashboard-theme main section[class*="from-slate-950"] .text-indigo-100\/80 {
+  color: rgba(224, 231, 255, 0.82) !important;
+}
+.dashboard-theme main section[class*="from-slate-950"] .text-indigo-200 {
+  color: #c7d2fe !important;
+}
+.dashboard-theme main section[class*="from-slate-950"] .text-cyan-300 {
+  color: #67e8f9 !important;
+}
+.dashboard-theme main section[class*="from-slate-950"] .bg-white,
+.dashboard-theme main section[class*="from-slate-950"] .bg-white * {
+  color: #16332a !important;
+}
