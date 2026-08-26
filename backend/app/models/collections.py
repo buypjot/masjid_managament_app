@@ -6,6 +6,7 @@ class SanthaCollection(Base):
     __tablename__ = "santha_collections"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     receipt_no = Column(String, nullable=False, index=True)
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)
@@ -32,6 +33,7 @@ class JumaCollection(Base):
     __tablename__ = "juma_collections"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     contributor_type = Column(String, default="Family")  # "Family" or "Other Person"
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)
@@ -68,6 +70,7 @@ class Donation(Base):
     __tablename__ = "donations"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     contributor_type = Column(String, default="Family")  # "Family" or "Other Person"
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)

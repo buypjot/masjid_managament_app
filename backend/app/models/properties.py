@@ -7,6 +7,7 @@ class Property(Base):
     __tablename__ = "properties"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     property_number = Column(String, unique=True, index=True, nullable=False)
     property_name = Column(String, nullable=False)
     property_type = Column(String, default="Commercial Complex")
@@ -42,6 +43,7 @@ class PropertyUnit(Base):
     __tablename__ = "property_units"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     property_id = Column(Integer, ForeignKey("properties.id"), nullable=False)
     unit_no = Column(String, nullable=False)
     door_no = Column(String, nullable=True)
@@ -59,6 +61,7 @@ class Tenant(Base):
     __tablename__ = "tenants"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     tenant_code = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     contact_person = Column(String, nullable=True)
@@ -88,6 +91,7 @@ class RentCollection(Base):
     __tablename__ = "rent_collections"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     receipt_no = Column(String, unique=True, index=True, nullable=False)
     tenant_name = Column(String, nullable=False)
     shop = Column(String, nullable=True)
@@ -103,6 +107,7 @@ class HallBooking(Base):
     __tablename__ = "hall_bookings"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     booking_id = Column(String, unique=True, index=True, nullable=False)
     applicant = Column(String, nullable=False)
     event = Column(String, nullable=False)
@@ -133,6 +138,7 @@ class PropertyDocument(Base):
     __tablename__ = "property_documents"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     doc_id = Column(String, unique=True, index=True, nullable=False)
     title = Column(String, nullable=False)
     category = Column(String, nullable=True)

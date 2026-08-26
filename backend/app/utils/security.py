@@ -51,6 +51,8 @@ def get_current_admin(credentials: HTTPAuthorizationCredentials = Depends(securi
         )
     return payload
 
+from app.tenant_isolation import set_current_tenant
+
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)) -> Dict[str, Any]:
     payload = decode_access_token(credentials.credentials)
     if payload.get("role") not in ["user", "admin"]:
@@ -58,4 +60,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access forbidden: User authentication required"
         )
+    sub = payload.get("sub")
+    if sub is not None and str(sub).isdigit():
+        set_current_tenant(int(sub))
     return payload
+
+def get_current_masjid_id(current_user: Dict[str, Any]) -> int:
+    sub = current_user.get("sub")
+    if sub is None or not str(sub).isdigit():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing user identity in authentication token."
+        )
+    masjid_id = int(sub)
+    set_current_tenant(masjid_id)
+    return masjid_id
+

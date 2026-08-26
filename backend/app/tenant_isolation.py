@@ -25,16 +25,20 @@ def get_current_tenant():
 
 
 def attach_tenant_columns():
-    """Attach the tenant ownership field to community/collection ORM models."""
+    """Attach the tenant ownership field to community/collection/property ORM models."""
     global TENANT_MODELS
     from app.models.community import (
         Family, FamilyMember, FamilyHeadChange, MemberRequest, CommunityFunction
     )
     from app.models.collections import SanthaCollection, JumaCollection, Donation
+    from app.models.properties import (
+        Property, PropertyUnit, Tenant, RentCollection, HallBooking, CookingVessel, PropertyDocument
+    )
 
     TENANT_MODELS = (
         Family, FamilyMember, FamilyHeadChange, MemberRequest, CommunityFunction,
         SanthaCollection, JumaCollection, Donation,
+        Property, PropertyUnit, Tenant, RentCollection, HallBooking, CookingVessel, PropertyDocument
     )
 
     for model in TENANT_MODELS:
@@ -51,6 +55,7 @@ def register_tenant_events():
     global _REGISTERED
     if _REGISTERED:
         return
+    _REGISTERED = True
 
     @event.listens_for(Session, "do_orm_execute")
     def _apply_tenant_filter(execute_state):
@@ -63,8 +68,9 @@ def register_tenant_events():
             statement = statement.options(
                 with_loader_criteria(
                     model,
-                    lambda cls, tenant_id=tenant_id: cls.masjid_id == tenant_id,
+                    lambda cls: cls.masjid_id == get_current_tenant(),
                     include_aliases=True,
+                    track_closure_variables=False,
                 )
             )
         execute_state.statement = statement
@@ -89,18 +95,7 @@ def register_tenant_events():
 
 
 def migrate_tenant_columns(engine):
-    """Create tenant columns and safely backfill legacy records.
-
-    Legacy rows do not contain a tenant id. Where a row has a timestamp, ownership is
-    inferred from the most recently-created Masjid account at or before that timestamp.
-    Related records with a family_id then inherit the family's tenant. Rows without a
-    usable timestamp/family relationship fall back to the earliest Masjid account.
-
-    This migration intentionally does not assume every table has ``created_at``:
-    ``family_head_changes`` uses ``changed_at`` and ``member_requests`` uses
-    ``requested_at``. The previous implementation assumed created_at everywhere,
-    rolled the whole transaction back, and left the database without masjid_id columns.
-    """
+    """Create tenant columns and safely backfill legacy records across all tables."""
     tables = [
         "families",
         "family_members",
@@ -110,6 +105,13 @@ def migrate_tenant_columns(engine):
         "santha_collections",
         "juma_collections",
         "donations",
+        "properties",
+        "property_units",
+        "tenants",
+        "rent_collections",
+        "hall_bookings",
+        "cooking_vessels",
+        "property_documents",
     ]
 
     timestamp_columns = {
@@ -121,6 +123,13 @@ def migrate_tenant_columns(engine):
         "santha_collections": "created_at",
         "juma_collections": "created_at",
         "donations": "created_at",
+        "properties": "created_at",
+        "property_units": "created_at",
+        "tenants": "created_at",
+        "rent_collections": "created_at",
+        "hall_bookings": "created_at",
+        "cooking_vessels": "created_at",
+        "property_documents": "created_at",
     }
 
     with engine.begin() as conn:
@@ -141,8 +150,7 @@ def migrate_tenant_columns(engine):
             logger.warning("No Masjid accounts exist; tenant columns were created but no legacy rows were assigned.")
             return
 
-        # First assign ownership using each table's actual timestamp column. This is
-        # intentionally table-specific so a schema difference cannot abort migration.
+        # Assign ownership using each table's timestamp column.
         for table, timestamp_column in timestamp_columns.items():
             conn.execute(text(f"""
                 UPDATE {table} AS row_data
@@ -159,9 +167,7 @@ def migrate_tenant_columns(engine):
                 WHERE row_data.masjid_id IS NULL
             """), {"earliest_masjid_id": earliest})
 
-        # Then make all family-related legacy records agree with their family tenant.
-        # This is more reliable than their individual timestamps because a family and
-        # its collections/members are one business domain.
+        # Make family-related legacy records agree with their family tenant.
         dependent_tables = [
             "family_members",
             "family_head_changes",
@@ -179,8 +185,7 @@ def migrate_tenant_columns(engine):
                   AND child.masjid_id IS DISTINCT FROM family.masjid_id
             """))
 
-        # Keep the result deterministic for orphaned legacy rows that have no account
-        # timestamp/relationship information.
+        # Keep result deterministic for orphaned legacy rows.
         for table in tables:
             conn.execute(text(f"""
                 UPDATE {table}

@@ -1,7 +1,9 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import get_db
+from app.utils.security import get_current_user, get_current_masjid_id
 from app.models.community import Family, FamilyMember, FamilyHeadChange, MemberRequest, CommunityFunction
 from app.models.collections import SanthaCollection, JumaCollection, Donation
 from app.schemas.community import (
@@ -49,12 +51,16 @@ async def get_families(
     search: Optional[str] = Query(None),
     area: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
+    print(f"DEBUG: get_families called with masjid_id={masjid_id}, current_user={current_user}")
+
     """
     Get all registered families with real statistics.
     """
-    query = db.query(Family)
+    query = db.query(Family).filter(Family.masjid_id == masjid_id)
 
     if search:
         s = f"%{search}%"
@@ -74,11 +80,11 @@ async def get_families(
     families = query.order_by(Family.id.asc()).all()
 
     # Calculate real dynamic stats from database
-    all_families = db.query(Family).all()
+    all_families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
     total_families = len(all_families)
     
     # Total actual members from FamilyMember table or member_count
-    total_members_db = db.query(FamilyMember).count()
+    total_members_db = db.query(FamilyMember).filter(FamilyMember.masjid_id == masjid_id).count()
     total_members = max(total_members_db, sum(f.member_count or 1 for f in all_families)) if total_families > 0 else 0
     
     poor_families = sum(1 for f in all_families if f.is_poor_family)
@@ -88,20 +94,20 @@ async def get_families(
     new_this_month = sum(1 for f in all_families if f.created_at and f.created_at.year == current_year and f.created_at.month == current_month)
 
     # Calculate actual collections across all tables (Santha + Juma + Donations + Functions)
-    santha_total = sum(s.amount or 0.0 for s in db.query(SanthaCollection).all())
-    juma_total = sum(j.amount or 0.0 for j in db.query(JumaCollection).all())
-    donations_total = sum(d.amount or 0.0 for d in db.query(Donation).all())
-    functions_total = sum(fn.paid_amount or 0.0 for fn in db.query(CommunityFunction).all())
+    santha_total = sum(s.amount or 0.0 for s in db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all())
+    juma_total = sum(j.amount or 0.0 for j in db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).all())
+    donations_total = sum(d.amount or 0.0 for d in db.query(Donation).filter(Donation.masjid_id == masjid_id).all())
+    functions_total = sum(fn.paid_amount or 0.0 for fn in db.query(CommunityFunction).filter(CommunityFunction.masjid_id == masjid_id).all())
 
     fam_collected_total = sum(f.collected_amount or 0.0 for f in all_families)
     grand_total_collected = max(santha_total + juma_total + donations_total + functions_total, fam_collected_total)
     
-    santha_cols = db.query(SanthaCollection).all()
+    santha_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     total_pending = sum(compute_family_statement_ledger(f, santha_cols)["pending_amount"] for f in all_families)
 
     # Calculate dynamic 12-month ACTUAL collection data
     monthly_totals = {m: 0.0 for m in range(1, 13)}
-    santha_cols = db.query(SanthaCollection).all()
+    santha_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     for s in santha_cols:
         m = s.created_at.month if s.created_at else current_month
         monthly_totals[m] += (s.amount or 0.0)
@@ -126,7 +132,7 @@ async def get_families(
     live_activities = []
 
     # 1. Santha Payments
-    santha_records = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).limit(15).all()
+    santha_records = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).limit(15).all()
     for s in santha_records:
         live_activities.append({
             "id": f"santha-{s.id}",
@@ -140,7 +146,7 @@ async def get_families(
         })
 
     # 2. Juma Collections
-    juma_records = db.query(JumaCollection).order_by(JumaCollection.id.desc()).limit(10).all()
+    juma_records = db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).order_by(JumaCollection.id.desc()).limit(10).all()
     for j in juma_records:
         live_activities.append({
             "id": f"juma-{j.id}",
@@ -154,7 +160,7 @@ async def get_families(
         })
 
     # 3. Donations
-    donation_records = db.query(Donation).order_by(Donation.id.desc()).limit(10).all()
+    donation_records = db.query(Donation).filter(Donation.masjid_id == masjid_id).order_by(Donation.id.desc()).limit(10).all()
     for d in donation_records:
         live_activities.append({
             "id": f"donation-{d.id}",
@@ -168,7 +174,7 @@ async def get_families(
         })
 
     # 4. Community Functions
-    func_records = db.query(CommunityFunction).order_by(CommunityFunction.id.desc()).limit(10).all()
+    func_records = db.query(CommunityFunction).filter(CommunityFunction.masjid_id == masjid_id).order_by(CommunityFunction.id.desc()).limit(10).all()
     for fn in func_records:
         if (fn.paid_amount or 0) > 0:
             live_activities.append({
@@ -182,7 +188,7 @@ async def get_families(
                 "time": fn.event_date or "Recent"
             })
 
-    all_cols = db.query(SanthaCollection).all()
+    all_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     family_list = []
     for f in families:
         ledger = compute_family_statement_ledger(f, all_cols)
@@ -244,8 +250,10 @@ async def get_families(
 @router.post("/families", response_model=FamilyResponse)
 async def create_family(
     payload: FamilyCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Create a new family record and initial head member in PostgreSQL with duplicate check.
     """
@@ -261,6 +269,7 @@ async def create_family(
 
     # Check for duplicate family (same family name & head name)
     existing_family = db.query(Family).filter(
+        Family.masjid_id == masjid_id,
         Family.family_name.ilike(family_title),
         Family.head_name.ilike(full_head_name)
     ).first()
@@ -269,18 +278,16 @@ async def create_family(
             status_code=400,
             detail=f"A family record for '{family_title}' with head '{full_head_name}' already exists in PostgreSQL."
         )
-
-    # Collision-safe family code generation
-    max_id = db.query(Family).count() + 1
-    generated_code = payload.family_code or f"F-{max_id:04d}"
-    code_check = db.query(Family).filter(Family.family_code == generated_code).first()
-    while code_check:
-        max_id += 1
-        generated_code = f"F-{max_id:04d}"
-        code_check = db.query(Family).filter(Family.family_code == generated_code).first()
+    # Collision-safe tenant-prefixed family code generation
+    if payload.family_code:
+        generated_code = payload.family_code
+    else:
+        max_id = db.execute(text("SELECT COALESCE(MAX(id), 0) + 1 FROM families")).scalar() or 1
+        generated_code = f"F-M{masjid_id}-{max_id:04d}"
 
     try:
         new_family = Family(
+            masjid_id=masjid_id,
             family_code=generated_code,
             family_name=family_title,
             head_name=full_head_name,
@@ -311,10 +318,15 @@ async def create_family(
         db.commit()
         db.refresh(new_family)
 
+        # Collision-safe member code generation
+        clean_code = new_family.family_code.replace("F-", "")
+        generated_member_code = f"M-{clean_code}-1"
+
         # Automatically add initial head member to FamilyMember table
         first_member = FamilyMember(
+            masjid_id=masjid_id,
             family_id=new_family.id,
-            member_code=f"M-{new_family.id:04d}-1",
+            member_code=generated_member_code,
             full_name=full_head_name,
             gender=payload.gender or "Male",
             dob=payload.dob,
@@ -336,6 +348,7 @@ async def create_family(
         new_snap = build_family_snapshot(new_family)
 
         head_log = FamilyHeadChange(
+            masjid_id=masjid_id,
             family_id=new_family.id,
             family_name=new_family.family_name,
             old_head="Initial Registration",
@@ -361,12 +374,14 @@ async def create_family(
 @router.get("/members")
 async def get_family_members(
     family_id: Optional[int] = Query(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get all family members, optionally filtered by family_id.
     """
-    query = db.query(FamilyMember)
+    query = db.query(FamilyMember).filter(FamilyMember.masjid_id == masjid_id)
     if family_id:
         query = query.filter(FamilyMember.family_id == family_id)
     members = query.order_by(FamilyMember.id.asc()).all()
@@ -375,30 +390,34 @@ async def get_family_members(
 @router.get("/members/next-code")
 async def get_next_member_code(
     family_id: Optional[int] = Query(None),
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Generate the next available unique token/member_code for preview.
     """
     if family_id:
-        family = db.query(Family).filter(Family.id == family_id).first()
+        family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
         if family:
-            existing_count = db.query(FamilyMember).filter(FamilyMember.family_id == family_id).count()
+            existing_count = db.query(FamilyMember).filter(FamilyMember.family_id == family_id, FamilyMember.masjid_id == masjid_id).count()
             clean_code = family.family_code.replace("F-", "")
             next_code = f"M-{clean_code}-{existing_count + 1}"
             return {"next_code": next_code}
-    total_count = db.query(FamilyMember).count() + 1
+    total_count = db.query(FamilyMember).filter(FamilyMember.masjid_id == masjid_id).count() + 1
     return {"next_code": f"M-{total_count:04d}"}
 
 @router.get("/members/{member_id}")
 async def get_member_detail(
     member_id: int,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get full details of a specific family member by ID.
     """
-    member = db.query(FamilyMember).filter(FamilyMember.id == member_id).first()
+    member = db.query(FamilyMember).filter(FamilyMember.id == member_id, FamilyMember.masjid_id == masjid_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Family member not found.")
     return member
@@ -406,12 +425,14 @@ async def get_member_detail(
 @router.post("/members", response_model=FamilyMemberResponse)
 async def add_family_member(
     payload: FamilyMemberCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Add a member to an existing family with full details.
     """
-    family = db.query(Family).filter(Family.id == payload.family_id).first()
+    family = db.query(Family).filter(Family.id == payload.family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found.")
 
@@ -423,6 +444,7 @@ async def add_family_member(
         generated_member_code = f"M-{clean_code}-{existing_count + 1}"
 
     new_member = FamilyMember(
+        masjid_id=masjid_id,
         family_id=payload.family_id,
         member_code=generated_member_code,
         full_name=payload.full_name,
@@ -444,6 +466,7 @@ async def add_family_member(
     db.add(new_member)
 
     member_log = FamilyHeadChange(
+        masjid_id=masjid_id,
         family_id=family.id,
         family_name=family.family_name,
         old_head=family.head_name,
@@ -474,12 +497,14 @@ async def add_family_member(
 async def update_family_member(
     member_id: int,
     payload: FamilyMemberUpdate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Update an existing family member's details in PostgreSQL database.
     """
-    member = db.query(FamilyMember).filter(FamilyMember.id == member_id).first()
+    member = db.query(FamilyMember).filter(FamilyMember.id == member_id, FamilyMember.masjid_id == masjid_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Family member not found.")
 
@@ -524,6 +549,7 @@ async def update_family_member(
 
     if family:
         member_log = FamilyHeadChange(
+        masjid_id=masjid_id,
             family_id=family.id,
             family_name=family.family_name,
             old_head=family.head_name,
@@ -554,8 +580,13 @@ async def update_family_member(
 
 
 @router.delete("/members/{member_id}")
-async def delete_family_member(member_id: int, db: Session = Depends(get_db)):
-    member = db.query(FamilyMember).filter(FamilyMember.id == member_id).first()
+async def delete_family_member(
+    member_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
+    member = db.query(FamilyMember).filter(FamilyMember.id == member_id, FamilyMember.masjid_id == masjid_id).first()
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
     
@@ -569,18 +600,23 @@ async def delete_family_member(member_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/head-changes")
-async def get_head_changes(db: Session = Depends(get_db)):
+async def get_head_changes(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get family head change logs from PostgreSQL database with full old vs new snapshots.
     If database logs are empty, generate initial baseline snapshots from existing families.
     """
-    changes = db.query(FamilyHeadChange).order_by(FamilyHeadChange.id.desc()).all()
+    changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.masjid_id == masjid_id).order_by(FamilyHeadChange.id.desc()).all()
     
     if not changes:
-        all_families = db.query(Family).all()
+        all_families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
         for fam in all_families:
             snapshot = build_family_snapshot(fam)
             initial_log = FamilyHeadChange(
+                masjid_id=masjid_id,
                 family_id=fam.id,
                 family_name=fam.family_name,
                 old_head="Initial Registration",
@@ -599,7 +635,7 @@ async def get_head_changes(db: Session = Depends(get_db)):
             )
             db.add(initial_log)
         db.commit()
-        changes = db.query(FamilyHeadChange).order_by(FamilyHeadChange.id.desc()).all()
+        changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.masjid_id == masjid_id).order_by(FamilyHeadChange.id.desc()).all()
 
     return [
         {
@@ -620,12 +656,14 @@ async def get_head_changes(db: Session = Depends(get_db)):
 @router.post("/head-changes")
 async def submit_head_change(
     payload: FamilyHeadChangeCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Update family head and full family attributes in PostgreSQL, creating succession log.
     """
-    family = db.query(Family).filter(Family.id == payload.family_id).first()
+    family = db.query(Family).filter(Family.id == payload.family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family not found in PostgreSQL.")
 
@@ -683,6 +721,7 @@ async def submit_head_change(
 
     new_snap = build_family_snapshot(family)
     change_record = FamilyHeadChange(
+        masjid_id=masjid_id,
         family_id=family.id,
         family_name=family.family_name,
         old_head=old_head,
@@ -707,12 +746,14 @@ async def submit_head_change(
 async def update_family(
     family_id: int,
     payload: FamilyCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Update all family details in PostgreSQL and log head changes with old vs new snapshots.
     """
-    family = db.query(Family).filter(Family.id == family_id).first()
+    family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family record not found.")
 
@@ -758,6 +799,7 @@ async def update_family(
 
     new_snap = build_family_snapshot(family)
     change_record = FamilyHeadChange(
+        masjid_id=masjid_id,
         family_id=family.id,
         family_name=family.family_name,
         old_head=old_head,
@@ -776,11 +818,15 @@ async def update_family(
 
 
 @router.get("/member-requests")
-async def get_member_requests(db: Session = Depends(get_db)):
+async def get_member_requests(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get member addition/update requests.
     """
-    requests = db.query(MemberRequest).order_by(MemberRequest.id.desc()).all()
+    requests = db.query(MemberRequest).filter(MemberRequest.masjid_id == masjid_id).order_by(MemberRequest.id.desc()).all()
     if not requests:
         return [
             {
@@ -871,17 +917,21 @@ def compute_family_statement_ledger(family, collections, current_year=2026, curr
 
 
 @router.get("/family-statements")
-async def get_family_statements(db: Session = Depends(get_db)):
+async def get_family_statements(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get complete family financial & membership statements from PostgreSQL database.
     Calculates required dues strictly starting from Joining Date.
     """
-    families = db.query(Family).all()
-    collections = db.query(SanthaCollection).all()
+    families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     statements = []
 
     for f in families:
-        members = db.query(FamilyMember).filter(FamilyMember.family_id == f.id).all()
+        members = db.query(FamilyMember).filter(FamilyMember.family_id == f.id, FamilyMember.masjid_id == masjid_id).all()
         ledger = compute_family_statement_ledger(f, collections)
 
         member_list = [
@@ -936,11 +986,15 @@ async def get_family_statements(db: Session = Depends(get_db)):
     return statements
 
 @router.get("/functions")
-async def get_community_functions(db: Session = Depends(get_db)):
+async def get_community_functions(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get community functions & charges list from PostgreSQL database.
     """
-    functions = db.query(CommunityFunction).order_by(CommunityFunction.id.desc()).all()
+    functions = db.query(CommunityFunction).filter(CommunityFunction.masjid_id == masjid_id).order_by(CommunityFunction.id.desc()).all()
     return [
         {
             "id": f.id,
@@ -968,13 +1022,15 @@ async def get_community_functions(db: Session = Depends(get_db)):
 @router.post("/functions")
 async def create_community_function(
     payload: CommunityFunctionCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Create a new Function Charge in PostgreSQL database.
     """
     try:
-        count = db.query(CommunityFunction).count()
+        count = db.query(CommunityFunction).filter(CommunityFunction.masjid_id == masjid_id).count()
         fun_code = f"FUN-{2601 + count}"
         rcp_code = payload.receipt_no or f"RCP-{2601 + count}"
 
@@ -993,6 +1049,7 @@ async def create_community_function(
                 computed_status = "Draft"
 
         new_func = CommunityFunction(
+            masjid_id=masjid_id,
             function_no=fun_code,
             family_id=payload.family_id,
             family_name=payload.family_name,
@@ -1027,13 +1084,15 @@ async def create_community_function(
 async def update_community_function(
     function_id: int,
     payload: CommunityFunctionCreate,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Update an existing Function Charge in PostgreSQL database.
     """
     try:
-        func = db.query(CommunityFunction).filter(CommunityFunction.id == function_id).first()
+        func = db.query(CommunityFunction).filter(CommunityFunction.id == function_id, CommunityFunction.masjid_id == masjid_id).first()
         if not func:
             raise HTTPException(status_code=404, detail="Function charge record not found")
 
@@ -1083,12 +1142,17 @@ async def update_community_function(
 
 
 @router.get("/family-activity/{family_id}")
-async def get_family_activity_detail(family_id: int, db: Session = Depends(get_db)):
+async def get_family_activity_detail(
+    family_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Fetch comprehensive family history, head succession, member roster & changes,
     santha collection payments (only actual paid entries), and function/marriage records.
     """
-    family = db.query(Family).filter(Family.id == family_id).first()
+    family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family record not found.")
 
@@ -1232,14 +1296,18 @@ async def get_family_activity_detail(family_id: int, db: Session = Depends(get_d
 
 
 @router.get("/notifications")
-async def get_notifications(db: Session = Depends(get_db)):
+async def get_notifications(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get aggregated live system notifications across all modules in PostgreSQL.
     """
     items = []
 
     # 0. Santha Due Date Alerts & 4-Day Advance Notifications
-    all_families = db.query(Family).all()
+    all_families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
     today_dt = datetime.now()
     cur_day = today_dt.day
     cur_month_str = today_dt.strftime("%B")
@@ -1311,7 +1379,7 @@ async def get_notifications(db: Session = Depends(get_db)):
                 })
 
     # 1. Santha Collections (Payment)
-    santha = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).limit(20).all()
+    santha = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).limit(20).all()
     for s in santha:
         items.append({
             "id": f"santha-{s.id}",
@@ -1331,7 +1399,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 2. Juma Collections (Payment)
-    juma = db.query(JumaCollection).order_by(JumaCollection.id.desc()).limit(15).all()
+    juma = db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).order_by(JumaCollection.id.desc()).limit(15).all()
     for j in juma:
         items.append({
             "id": f"juma-{j.id}",
@@ -1351,7 +1419,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 3. Donations (Payment)
-    donations = db.query(Donation).order_by(Donation.id.desc()).limit(15).all()
+    donations = db.query(Donation).filter(Donation.masjid_id == masjid_id).order_by(Donation.id.desc()).limit(15).all()
     for d in donations:
         items.append({
             "id": f"donation-{d.id}",
@@ -1371,7 +1439,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 4. Community Functions (Function)
-    functions = db.query(CommunityFunction).order_by(CommunityFunction.id.desc()).limit(15).all()
+    functions = db.query(CommunityFunction).filter(CommunityFunction.masjid_id == masjid_id).order_by(CommunityFunction.id.desc()).limit(15).all()
     for f in functions:
         items.append({
             "id": f"func-{f.id}",
@@ -1391,7 +1459,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 5. Family Members (Member)
-    members = db.query(FamilyMember).order_by(FamilyMember.id.desc()).limit(15).all()
+    members = db.query(FamilyMember).filter(FamilyMember.masjid_id == masjid_id).order_by(FamilyMember.id.desc()).limit(15).all()
     for m in members:
         fam_name = m.family.family_name if m.family else "Family"
         items.append({
@@ -1412,7 +1480,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 6. Head Changes (Member)
-    head_changes = db.query(FamilyHeadChange).order_by(FamilyHeadChange.id.desc()).limit(15).all()
+    head_changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.masjid_id == masjid_id).order_by(FamilyHeadChange.id.desc()).limit(15).all()
     for hc in head_changes:
         items.append({
             "id": f"hc-{hc.id}",
@@ -1432,7 +1500,7 @@ async def get_notifications(db: Session = Depends(get_db)):
         })
 
     # 7. Member Requests (Booking)
-    requests = db.query(MemberRequest).order_by(MemberRequest.id.desc()).limit(10).all()
+    requests = db.query(MemberRequest).filter(MemberRequest.masjid_id == masjid_id).order_by(MemberRequest.id.desc()).limit(10).all()
     for r in requests:
         items.append({
             "id": f"req-{r.id}",

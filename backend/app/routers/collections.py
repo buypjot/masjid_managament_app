@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.database import get_db
+from app.utils.security import get_current_user, get_current_masjid_id
 from app.models.collections import SanthaCollection, JumaCollection, Donation
 import json
 from app.models.community import Family, FamilyHeadChange
@@ -132,14 +133,16 @@ def calculate_family_santha_arrears(family: Family, collections: list, current_y
 async def get_santha_overview(
     month: Optional[str] = "August",
     year: Optional[int] = 2026,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get live Santha Collection metrics and family ledger breakdown directly from PostgreSQL database.
     NO dummy or mock data used.
     """
-    families = db.query(Family).all()
-    collections = db.query(SanthaCollection).all()
+    families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
 
     total_families_count = len(families)
     total_monthly_due = sum((f.monthly_santha or 500.0) for f in families)
@@ -199,16 +202,25 @@ async def get_santha_overview(
     }
 
 @router.get("/santha", response_model=List[SanthaCollectionResponse])
-async def get_santha_collections(db: Session = Depends(get_db)):
+async def get_santha_collections(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve all recorded Santha collections."""
-    records = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).all()
+    records = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).all()
     return records
 
 @router.post("/santha", response_model=SanthaCollectionResponse)
-async def create_santha_collection(payload: SanthaCollectionCreate, db: Session = Depends(get_db)):
+async def create_santha_collection(
+    payload: SanthaCollectionCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record a new Santha payment for a family and save to PostgreSQL database."""
     try:
-        count = db.query(SanthaCollection).count()
+        count = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).count()
         rcp_code = f"REC-SANT-{2601 + count}"
 
         is_adv = payload.is_advance or (payload.allocation == "Advance")
@@ -218,6 +230,7 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
         ref_id = payload.reference_id if payload.reference_id and payload.reference_id.strip() else f"TXN-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
 
         new_rec = SanthaCollection(
+            masjid_id=masjid_id,
             receipt_no=rcp_code,
             family_id=payload.family_id,
             family_code=payload.family_code or f"F-{payload.family_id:04d}",
@@ -242,7 +255,7 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
         db.add(new_rec)
 
         # Update family collection totals & log audit record to FamilyHeadChange
-        fam_obj = db.query(Family).filter(Family.id == payload.family_id).first()
+        fam_obj = db.query(Family).filter(Family.id == payload.family_id, Family.masjid_id == masjid_id).first()
         old_head_name = fam_obj.head_name if fam_obj else (payload.head_name or payload.family_name)
         if fam_obj:
             fam_obj.collected_amount = (fam_obj.collected_amount or 0.0) + payload.amount
@@ -260,6 +273,7 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
                     pmt_dt = datetime.utcnow()
 
         head_log = FamilyHeadChange(
+            masjid_id=masjid_id,
             family_id=payload.family_id,
             family_name=payload.family_name,
             old_head=old_head_name,
@@ -294,10 +308,14 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
         raise HTTPException(status_code=500, detail=f"Failed to record Santha collection: {str(e)}")
 
 @router.get("/santha-arrears")
-async def get_santha_arrears(db: Session = Depends(get_db)):
+async def get_santha_arrears(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List families with pending/overdue Santha arrears based on Joining Date."""
-    families = db.query(Family).all()
-    collections = db.query(SanthaCollection).all()
+    families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     arrears_list = []
     
     for f in families:
@@ -325,21 +343,31 @@ async def get_santha_arrears(db: Session = Depends(get_db)):
 
 
 @router.get("/santha-calculation/{family_id}")
-async def get_family_santha_calculation(family_id: int, db: Session = Depends(get_db)):
+async def get_family_santha_calculation(
+    family_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get full joining-date based Santha calculation and month-by-month payment history for a family.
     """
-    family = db.query(Family).filter(Family.id == family_id).first()
+    family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family record not found.")
 
-    collections = db.query(SanthaCollection).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     return calculate_family_santha_arrears(family, collections)
 
 @router.get("/santha-advances")
-async def get_santha_advances(db: Session = Depends(get_db)):
+async def get_santha_advances(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List recorded advance Santha payments."""
     advances = db.query(SanthaCollection).filter(
+        SanthaCollection.masjid_id == masjid_id,
         (SanthaCollection.is_advance == True) | (SanthaCollection.allocation == "Advance")
     ).order_by(SanthaCollection.id.desc()).all()
     return [
@@ -363,9 +391,15 @@ async def get_santha_advances(db: Session = Depends(get_db)):
     ]
 
 @router.put("/santha/{collection_id}")
-async def update_santha_collection(collection_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_santha_collection(
+    collection_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update an existing Santha payment or advance record in PostgreSQL."""
-    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id).first()
+    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id, SanthaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Santha collection record not found")
 
@@ -395,9 +429,14 @@ async def update_santha_collection(collection_id: int, payload: dict, db: Sessio
         raise HTTPException(status_code=500, detail=f"Failed to update Santha collection record: {str(e)}")
 
 @router.delete("/santha/{collection_id}")
-async def delete_santha_collection(collection_id: int, db: Session = Depends(get_db)):
+async def delete_santha_collection(
+    collection_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a Santha collection record from PostgreSQL."""
-    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id).first()
+    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id, SanthaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Santha collection record not found")
 
@@ -410,9 +449,13 @@ async def delete_santha_collection(collection_id: int, db: Session = Depends(get
         raise HTTPException(status_code=500, detail=f"Failed to delete record: {str(e)}")
 
 @router.get("/santha-receipts")
-async def get_santha_receipts(db: Session = Depends(get_db)):
+async def get_santha_receipts(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List all generated Santha collection receipts."""
-    receipts = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).all()
+    receipts = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).all()
     return [
         {
             "id": r.id,
@@ -435,15 +478,24 @@ async def get_santha_receipts(db: Session = Depends(get_db)):
 # --------------------------------------------------------------------------
 
 @router.get("/juma", response_model=List[JumaCollectionResponse])
-async def get_juma_collections(db: Session = Depends(get_db)):
+async def get_juma_collections(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve Friday Juma Hundi / Box collection records."""
-    return db.query(JumaCollection).order_by(JumaCollection.id.desc()).all()
+    return db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).order_by(JumaCollection.id.desc()).all()
 
 @router.post("/juma", response_model=JumaCollectionResponse)
-async def create_juma_collection(payload: JumaCollectionCreate, db: Session = Depends(get_db)):
+async def create_juma_collection(
+    payload: JumaCollectionCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record new Friday Juma Box or Category collection."""
     try:
-        count = db.query(JumaCollection).count()
+        count = db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).count()
         rcp_code = payload.receipt_no or f"REC-JUM-{2601 + count}"
         
         pmt_sum = (payload.cash_amount or 0.0) + (payload.upi_amount or 0.0) + \
@@ -468,6 +520,7 @@ async def create_juma_collection(payload: JumaCollectionCreate, db: Session = De
             pm_method = ", ".join(methods) if methods else "Cash"
 
         new_juma = JumaCollection(
+            masjid_id=masjid_id,
             contributor_type=payload.contributor_type or "Family",
             family_id=payload.family_id,
             family_code=payload.family_code,
@@ -502,9 +555,15 @@ async def create_juma_collection(payload: JumaCollectionCreate, db: Session = De
         raise HTTPException(status_code=500, detail=f"Failed to record Juma collection: {str(e)}")
 
 @router.put("/juma/{juma_id}")
-async def update_juma_collection(juma_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_juma_collection(
+    juma_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update a Juma collection record in PostgreSQL."""
-    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id).first()
+    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id, JumaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Juma collection record not found")
 
@@ -534,9 +593,14 @@ async def update_juma_collection(juma_id: int, payload: dict, db: Session = Depe
         raise HTTPException(status_code=500, detail=f"Failed to update Juma record: {str(e)}")
 
 @router.delete("/juma/{juma_id}")
-async def delete_juma_collection(juma_id: int, db: Session = Depends(get_db)):
+async def delete_juma_collection(
+    juma_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a Juma collection record from PostgreSQL."""
-    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id).first()
+    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id, JumaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Juma collection record not found")
 
@@ -553,15 +617,24 @@ async def delete_juma_collection(juma_id: int, db: Session = Depends(get_db)):
 # --------------------------------------------------------------------------
 
 @router.get("/donations", response_model=List[DonationResponse])
-async def get_donations(db: Session = Depends(get_db)):
+async def get_donations(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve all recorded donations and Sadaqah contributions."""
-    return db.query(Donation).order_by(Donation.id.desc()).all()
+    return db.query(Donation).filter(Donation.masjid_id == masjid_id).order_by(Donation.id.desc()).all()
 
 @router.post("/donations", response_model=DonationResponse)
-async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)):
+async def create_donation(
+    payload: DonationCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record a new Donation or Sadaqah contribution with full category and payment breakdown."""
     try:
-        count = db.query(Donation).count()
+        count = db.query(Donation).filter(Donation.masjid_id == masjid_id).count()
         rcp_code = payload.receipt_no or f"REC-DON-{2601 + count}"
 
         pmt_sum = (payload.cash_amount or 0.0) + (payload.upi_amount or 0.0) + \
@@ -586,6 +659,7 @@ async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)
             pm_method = ", ".join(methods) if methods else "Cash"
 
         new_don = Donation(
+            masjid_id=masjid_id,
             contributor_type=payload.contributor_type or "Family",
             family_id=payload.family_id,
             family_code=payload.family_code,
@@ -620,9 +694,15 @@ async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=f"Failed to record donation: {str(e)}")
 
 @router.put("/donations/{donation_id}")
-async def update_donation(donation_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_donation(
+    donation_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update a donation record in PostgreSQL."""
-    rec = db.query(Donation).filter(Donation.id == donation_id).first()
+    rec = db.query(Donation).filter(Donation.id == donation_id, Donation.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Donation record not found")
 
@@ -652,9 +732,14 @@ async def update_donation(donation_id: int, payload: dict, db: Session = Depends
         raise HTTPException(status_code=500, detail=f"Failed to update donation record: {str(e)}")
 
 @router.delete("/donations/{donation_id}")
-async def delete_donation(donation_id: int, db: Session = Depends(get_db)):
+async def delete_donation(
+    donation_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a donation record from PostgreSQL."""
-    rec = db.query(Donation).filter(Donation.id == donation_id).first()
+    rec = db.query(Donation).filter(Donation.id == donation_id, Donation.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Donation record not found")
 
