@@ -5,6 +5,7 @@ import './index.css';
 import './theme-fixes.css';
 import './dashboard-responsive.css';
 import './dashboard-scroll-fix.css';
+import './font-size-overrides.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

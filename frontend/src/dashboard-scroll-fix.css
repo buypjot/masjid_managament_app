@@ -1,11 +1,15 @@
-/* Fixed dashboard shell: viewport stays locked, only workspace content scrolls. */
-html:has(.dashboard-theme), body:has(.dashboard-theme), #root:has(.dashboard-theme) {
+/* Global dashboard shell: fixed navigation/header, scrollable workspace only. */
+html:has(.dashboard-theme),
+body:has(.dashboard-theme),
+#root:has(.dashboard-theme) {
+  width: 100%;
   height: 100%;
   min-height: 100%;
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 .dashboard-theme {
+  width: 100%;
   height: 100vh !important;
   min-height: 100vh !important;
   max-height: 100vh !important;
@@ -13,24 +17,33 @@ html:has(.dashboard-theme), body:has(.dashboard-theme), #root:has(.dashboard-the
 }
 
 .dashboard-app-content {
+  width: 100%;
   height: 100%;
-  min-height: 0;
+  min-height: 0 !important;
   max-height: 100%;
   overflow: hidden !important;
 }
 
-.dashboard-app-content > div {
+/* Every routed dashboard page gets a real viewport-sized workspace. */
+.dashboard-app-content > .flex,
+.dashboard-app-content > .dashboard-page-shell,
+.dashboard-app-content > .dashboard-shell {
+  width: 100%;
   height: 100%;
-  min-height: 0;
+  min-height: 0 !important;
   max-height: 100%;
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
-.dashboard-app-content .flex.min-h-screen {
+.dashboard-app-content > .flex > .flex-1,
+.dashboard-app-content > .flex > .min-w-0.flex-1,
+.dashboard-app-content > .dashboard-page-shell > .flex-1,
+.dashboard-app-content > .dashboard-shell > .flex-1 {
+  min-width: 0 !important;
+  min-height: 0 !important;
   height: 100%;
-  min-height: 0;
   max-height: 100%;
-  overflow: hidden;
+  overflow-y: auto !important;
 }
 
 .dashboard-app-content .min-w-0.flex-1 {
@@ -41,7 +54,6 @@ html:has(.dashboard-theme), body:has(.dashboard-theme), #root:has(.dashboard-the
 }
 
 @media (min-width: 1024px) {
-  /* Sidebar stays in fixed height container while workspace content scrolls alongside it. */
   .dashboard-theme aside {
     height: 100% !important;
     max-height: 100% !important;
@@ -50,9 +62,43 @@ html:has(.dashboard-theme), body:has(.dashboard-theme), #root:has(.dashboard-the
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
+/* Only the actual workspace is allowed to scroll. */
+.dashboard-theme .dashboard-workspace,
+.dashboard-theme .dashboard-content,
+.dashboard-theme .workspace-content {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 1023px) {
+  /* Mobile: sidebar becomes an overlay/drawer; content uses the full width. */
+  .dashboard-app-content > .flex {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .dashboard-app-content > .flex > .flex-1,
+  .dashboard-app-content > .flex > .min-w-0.flex-1 {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+
   .dashboard-theme aside {
+    max-height: 100dvh !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-theme,
+  .dashboard-theme aside,
+  .dashboard-theme .dashboard-workspace,
+  .dashboard-theme .dashboard-content,
+  .dashboard-theme .workspace-content {
     scroll-behavior: auto !important;
   }
 }
+
 

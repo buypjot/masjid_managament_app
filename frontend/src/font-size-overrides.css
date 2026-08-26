@@ -1,0 +1,105 @@
+/* Global accessibility typography scale.
+ * Increase readable text across the entire Masjid Manager application
+ * without changing page structure, routes, API behaviour, or business logic.
+ */
+
+html {
+  font-size: 16px;
+}
+
+body {
+  font-size: 1.0625rem !important;
+  line-height: 1.55;
+}
+
+/* Tailwind text utilities: approximately 12.5% larger for easier reading. */
+.text-xs {
+  font-size: 0.84375rem !important;
+  line-height: 1.3 !important;
+}
+
+.text-sm {
+  font-size: 0.984375rem !important;
+  line-height: 1.45 !important;
+}
+
+.text-base {
+  font-size: 1.125rem !important;
+  line-height: 1.55 !important;
+}
+
+.text-lg {
+  font-size: 1.265625rem !important;
+  line-height: 1.5 !important;
+}
+
+.text-xl {
+  font-size: 1.40625rem !important;
+  line-height: 1.4 !important;
+}
+
+.text-2xl {
+  font-size: 1.6875rem !important;
+  line-height: 1.3 !important;
+}
+
+.text-3xl {
+  font-size: 2.109375rem !important;
+  line-height: 1.2 !important;
+}
+
+.text-4xl {
+  font-size: 2.53125rem !important;
+  line-height: 1.15 !important;
+}
+
+.text-5xl {
+  font-size: 3.375rem !important;
+  line-height: 1.1 !important;
+}
+
+.text-6xl {
+  font-size: 4.21875rem !important;
+  line-height: 1.05 !important;
+}
+
+/* Make form controls, placeholders, table content and navigation easier to read. */
+input,
+select,
+textarea,
+button {
+  font-size: 1rem;
+}
+
+input::placeholder,
+textarea::placeholder {
+  font-size: 0.984375rem !important;
+}
+
+table th,
+table td {
+  font-size: 1rem;
+}
+
+label {
+  font-size: 0.984375rem;
+}
+
+/* Preserve comfortable readability on smaller screens. */
+@media (max-width: 640px) {
+  body {
+    font-size: 1rem !important;
+  }
+
+  .text-xs {
+    font-size: 0.8125rem !important;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem !important;
+  }
+
+  .text-base {
+    font-size: 1.0625rem !important;
+  }
+}
