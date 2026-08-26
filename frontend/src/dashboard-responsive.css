@@ -13,8 +13,6 @@
   .dashboard-mobile-input:checked + .dashboard-mobile-toggle::before{content:"×";font-size:30px;font-weight:500}
   .dashboard-mobile-overlay{display:block;position:fixed;inset:0;z-index:55;background:rgba(12,35,28,.38);opacity:0;pointer-events:none;transition:opacity .22s ease;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
   .dashboard-mobile-input:checked ~ .dashboard-mobile-overlay{opacity:1;pointer-events:auto}
-  .dashboard-theme aside{position:fixed!important;left:0!important;top:0!important;bottom:0!important;width:min(88vw,320px)!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;margin:0!important;z-index:70!important;overflow-y:auto!important;overflow-x:hidden!important;transform:translateX(0)!important;transition:transform .25s cubic-bezier(.22,.8,.25,1),box-shadow .25s ease;box-shadow:18px 0 50px rgba(18,73,55,.18)!important;-webkit-overflow-scrolling:touch}
-  .dashboard-mobile-input:checked ~ .dashboard-app-content .dashboard-theme aside{transform:translateX(0)}
   .dashboard-app-content{min-width:0;width:100%;max-width:100%;overflow-x:hidden}
   .dashboard-theme main{min-width:0!important;width:100%!important;max-width:100%!important}
   .dashboard-theme main>*{max-width:100%;min-width:0}

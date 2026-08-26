@@ -73,9 +73,9 @@ export const AdminSignupDetailPage = () => {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] bg-slate-950">
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-slate-950 font-sans text-slate-100">
       <AdminSidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="min-w-0 h-full flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
           
           {/* Back Button */}

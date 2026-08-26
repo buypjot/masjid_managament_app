@@ -157,10 +157,34 @@ export const ModernUserSidebar = () => {
     </aside>
   );
 
-  return <>
-    <button onClick={() => setMobileOpen(true)} className="fixed left-4 top-4 z-40 rounded-xl bg-slate-950 p-3 text-white shadow-xl lg:hidden"><Menu className="h-5 w-5" /></button>
-    <div className="hidden h-screen shrink-0 lg:block">{sidebar}</div>
-    {mobileOpen && <div className="fixed inset-0 z-50 lg:hidden"><button onClick={() => setMobileOpen(false)} className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm" /> <div className="relative h-full">{sidebar}</div></div>}
-    <ProfileSettingsModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
-  </>;
+  return (
+    <>
+      <button
+        onClick={() => setMobileOpen(true)}
+        className="fixed left-4 top-4 z-40 flex items-center justify-center rounded-xl bg-slate-950 p-2.5 text-white shadow-xl lg:hidden"
+        aria-label="Open Navigation Menu"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      <div className="hidden h-screen w-[286px] shrink-0 lg:block sticky top-0 z-30">
+        {sidebar}
+      </div>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm transition-opacity"
+            aria-label="Close Menu"
+          />
+          <div className="relative h-full w-[286px] max-w-[88vw] z-10">
+            {sidebar}
+          </div>
+        </div>
+      )}
+
+      <ProfileSettingsModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+    </>
+  );
 };

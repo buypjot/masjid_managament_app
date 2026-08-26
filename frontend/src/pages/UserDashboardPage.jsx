@@ -4,13 +4,12 @@ import { ModernMasjidDashboard } from '../components/ModernMasjidDashboard';
 
 export const UserDashboardPage = () => {
   return (
-    <div className="dashboard-theme h-screen overflow-hidden bg-[#f5f7fb]">
-      <div className="dashboard-app-content flex h-full min-h-0 overflow-hidden">
-        <ModernUserSidebar />
-        <div className="min-w-0 min-h-0 flex-1 overflow-hidden">
-          <ModernMasjidDashboard />
-        </div>
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-[#f5f7fb]">
+      <ModernUserSidebar />
+      <div className="min-w-0 h-full flex-1 overflow-y-auto">
+        <ModernMasjidDashboard />
       </div>
     </div>
   );
 };
+

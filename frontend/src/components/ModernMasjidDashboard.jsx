@@ -95,7 +95,7 @@ export const ModernMasjidDashboard = () => {
       <div className="pointer-events-none absolute right-0 top-20 h-96 w-96 rounded-full bg-cyan-300/15 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-violet-300/10 blur-3xl" />
 
-      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/85 px-4 pl-16 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4">
           <div className="flex items-center gap-3 lg:hidden"><div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-500 p-2 text-center text-lg">🕌</div><span className="font-black">Masjid Desk</span></div>
           <div className="hidden items-center gap-2 text-sm font-semibold text-slate-500 lg:flex"><span>Workspace</span><span className="text-slate-300">/</span><span className="font-black text-slate-950">Dashboard</span></div>
