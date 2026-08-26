@@ -13,7 +13,7 @@ export const Navbar = () => {
   const isAdminPage = location.pathname.startsWith('/admin');
   const isDashboardPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/notifications');
 
-  if (location.pathname === '/login' || location.pathname === '/signup' || isDashboardPage) return null;
+  if (location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/admin/login' || isDashboardPage) return null;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-900/90 backdrop-blur-md">
