@@ -100,18 +100,18 @@ export const UserLoginPage = () => {
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
                     <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-600">Registered Mobile Number</label>
                     <div className="group relative">
-                      <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-[#0f766e]" />
+                      <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-[#0f766e]" />
                       <input
                         type="tel"
                         value={mobileNumber}
                         onChange={(e) => { setMobileNumber(e.target.value); if (error) setError(''); }}
                         placeholder="e.g. 919600698893"
-                        className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#0f766e] focus:ring-4 focus:ring-emerald-500/10"
-                        style={{ WebkitTextFillColor: '#0f172a' }}
+                        className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-semibold text-slate-950 caret-slate-950 outline-none transition-all placeholder:text-slate-600 placeholder:font-medium focus:border-[#0f766e] focus:ring-4 focus:ring-emerald-500/10"
+                        style={{ WebkitTextFillColor: '#020617' }}
                         required
                       />
                     </div>
-                    <p className="mt-2 text-[11px] text-slate-400">Use the mobile number approved during Masjid registration.</p>
+                    <p className="mt-2 text-[11px] text-slate-500">Use the mobile number approved during Masjid registration.</p>
                   </motion.div>
 
                   <motion.button type="submit" disabled={loading} whileHover={{ y: -1, scale: 1.005 }} whileTap={{ scale: 0.985 }} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#0f766e] via-[#0b7f75] to-[#064e3b] px-4 py-3.5 text-sm font-extrabold text-white shadow-xl shadow-emerald-900/25 transition-shadow hover:shadow-emerald-900/40 disabled:cursor-not-allowed disabled:opacity-60">
