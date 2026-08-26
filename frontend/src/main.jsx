@@ -4,6 +4,7 @@ import App from './App';
 import './index.css';
 import './theme-fixes.css';
 import './dashboard-responsive.css';
+import './dashboard-scroll-fix.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
