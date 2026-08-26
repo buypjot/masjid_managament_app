@@ -25,7 +25,7 @@ def get_current_tenant():
 
 
 def attach_tenant_columns():
-    """Attach masjid_id to the community/collections models without changing their business fields."""
+    """Attach the tenant ownership field to community/collection ORM models."""
     global TENANT_MODELS
     from app.models.community import (
         Family, FamilyMember, FamilyHeadChange, MemberRequest, CommunityFunction
@@ -75,24 +75,27 @@ def register_tenant_events():
         if tenant_id is None:
             return
 
-        tenant_types = TENANT_MODELS
         for obj in session.new:
-            if isinstance(obj, tenant_types):
+            if isinstance(obj, TENANT_MODELS):
                 obj.masjid_id = tenant_id
 
         for obj in session.dirty:
-            if isinstance(obj, tenant_types):
+            if isinstance(obj, TENANT_MODELS):
                 current_id = getattr(obj, "masjid_id", None)
                 if current_id is None:
                     obj.masjid_id = tenant_id
                 elif int(current_id) != int(tenant_id):
                     raise PermissionError("Cross-account data modification is not permitted.")
 
-    _REGISTERED = True
-
 
 def migrate_tenant_columns(engine):
-    """Add tenant columns to existing PostgreSQL tables and safely assign legacy rows."""
+    """Create tenant columns and backfill legacy rows without assuming every table has created_at.
+
+    The previous migration used row_data.created_at for every table. That is invalid for
+    family_head_changes (which uses changed_at) and caused the whole transaction to roll
+    back, so none of the masjid_id columns were actually created. The application then
+    queried a column that did not exist and returned HTTP 500.
+    """
     tables = [
         "families",
         "family_members",
@@ -105,6 +108,8 @@ def migrate_tenant_columns(engine):
     ]
 
     with engine.begin() as conn:
+        # Schema changes are completed first. Do not combine them with a backfill that
+        # can fail because one legacy table has a different timestamp column.
         for table in tables:
             conn.execute(text(
                 f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS masjid_id INTEGER"
@@ -113,24 +118,37 @@ def migrate_tenant_columns(engine):
                 f"CREATE INDEX IF NOT EXISTS ix_{table}_masjid_id ON {table} (masjid_id)"
             ))
 
-        # Existing data was created before account ownership existed. Associate each
-        # legacy row with the latest Masjid account that existed at the row's creation
-        # time. This preserves the original account's data while leaving newly-created
-        # accounts clean. New writes are stamped automatically by before_flush above.
-        for table in tables:
+        # Legacy data predates tenant ownership. There is no reliable account id on those
+        # rows, so use the original/earliest Masjid account as the safe fallback instead
+        # of guessing from table-specific timestamps. New rows are always stamped from
+        # the authenticated JWT by before_flush above.
+        earliest = conn.execute(text(
+            "SELECT id FROM masjids ORDER BY id ASC LIMIT 1"
+        )).scalar()
+
+        if earliest is not None:
+            for table in tables:
+                conn.execute(text(
+                    f"UPDATE {table} SET masjid_id = :masjid_id WHERE masjid_id IS NULL"
+                ), {"masjid_id": earliest})
+
+        # Where a legacy row references a family, inherit the family tenant. This keeps
+        # related historical records together when more than one tenant already existed.
+        dependent_tables = [
+            "family_members",
+            "family_head_changes",
+            "community_functions",
+            "santha_collections",
+            "juma_collections",
+            "donations",
+        ]
+        for table in dependent_tables:
             conn.execute(text(f"""
-                UPDATE {table} AS row_data
-                SET masjid_id = COALESCE(
-                    (
-                        SELECT m.id
-                        FROM masjids AS m
-                        WHERE m.created_at <= row_data.created_at
-                        ORDER BY m.created_at DESC
-                        LIMIT 1
-                    ),
-                    (SELECT m2.id FROM masjids AS m2 ORDER BY m2.created_at ASC LIMIT 1)
-                )
-                WHERE row_data.masjid_id IS NULL
+                UPDATE {table} AS child
+                SET masjid_id = family.masjid_id
+                FROM families AS family
+                WHERE child.family_id = family.id
+                  AND child.masjid_id IS DISTINCT FROM family.masjid_id
             """))
 
     logger.info("Tenant/account isolation schema and legacy ownership migration applied.")
