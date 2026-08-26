@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
@@ -23,11 +23,40 @@ const AppFrame = () => {
   const isDashboardRoute = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/notifications');
   const isAdminRoute = location.pathname.startsWith('/admin/') && location.pathname !== '/admin/login';
   const themeClass = isDashboardRoute || isAdminRoute ? 'dashboard-theme' : '';
+  const showMobileDashboardMenu = isDashboardRoute || isAdminRoute;
+
+  useEffect(() => {
+    const menu = document.getElementById('dashboard-mobile-menu');
+    if (menu) menu.checked = false;
+  }, [location.pathname]);
 
   return (
     <div className={`min-h-screen flex flex-col font-sans ${themeClass} bg-slate-950 text-slate-100`}>
       <Navbar />
-      <div className="flex-1">
+
+      {showMobileDashboardMenu && (
+        <>
+          <input
+            id="dashboard-mobile-menu"
+            type="checkbox"
+            className="dashboard-mobile-input"
+            aria-label="Toggle dashboard navigation"
+          />
+          <label
+            htmlFor="dashboard-mobile-menu"
+            className="dashboard-mobile-toggle"
+            aria-label="Open dashboard navigation"
+            title="Menu"
+          />
+          <label
+            htmlFor="dashboard-mobile-menu"
+            className="dashboard-mobile-overlay"
+            aria-label="Close dashboard navigation"
+          />
+        </>
+      )}
+
+      <div className="dashboard-app-content flex-1">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Navigate to="/signup" replace />} />
