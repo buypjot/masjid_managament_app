@@ -15,15 +15,61 @@ from app.utils.security import create_access_token, get_current_user
 router = APIRouter(prefix="/api/auth", tags=["Public Authentication & Signup"])
 logger = logging.getLogger("masjid_app.auth_router")
 
+
+def build_user_info(masjid: Masjid):
+    return {
+        "masjid_id": masjid.id,
+        "masjid_name": masjid.masjid_name,
+        "mobile_number": masjid.mobile_number,
+        "email": masjid.admin_email or masjid.email,
+        "city": masjid.city,
+        "admin_name": masjid.admin_name or masjid.masjid_name,
+        "full_name": masjid.admin_name or masjid.masjid_name,
+        "admin_role": masjid.admin_role or "Administrator",
+        "admin_mobile": masjid.admin_mobile or masjid.mobile_number,
+        "profile_photo": masjid.profile_photo or None,
+        "account_created_at": masjid.created_at,
+    }
+
+
+def find_active_masjid_for_mobile(db: Session, mobile: str):
+    """Resolve the login identity from the exact mobile used for authentication.
+
+    Primary Masjid mobile numbers are checked first. Admin mobile is only used
+    when no primary-mobile match exists. Ambiguous matches are rejected rather
+    than silently selecting another user's account.
+    """
+    primary_matches = db.query(Masjid).filter(
+        Masjid.mobile_number == mobile,
+        Masjid.status == "active"
+    ).all()
+    if len(primary_matches) == 1:
+        return primary_matches[0]
+    if len(primary_matches) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Multiple active accounts use this mobile number. Please contact the administrator."
+        )
+
+    admin_matches = db.query(Masjid).filter(
+        Masjid.admin_mobile == mobile,
+        Masjid.status == "active"
+    ).all()
+    if len(admin_matches) == 1:
+        return admin_matches[0]
+    if len(admin_matches) > 1:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Multiple active accounts use this mobile number. Please contact the administrator."
+        )
+    return None
+
+
 @router.post("/signup", response_model=SignupResponse, status_code=status.HTTP_201_CREATED)
 async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
-    """
-    Public Signup Endpoint for Masjids.
-    Saves signup request with all extended fields, triggers webhook, and notifies the user.
-    """
+    """Public Signup Endpoint for Masjids."""
     cleaned_mobile = payload.mobile_number
-    
-    # Check existing signup request
+
     existing_request = db.query(SignupRequest).filter(
         SignupRequest.mobile_number == cleaned_mobile,
         SignupRequest.status.in_([SignupStatus.PENDING.value, SignupStatus.APPROVED.value])
@@ -35,11 +81,10 @@ async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="A registration for this mobile number has already been approved. Please proceed to Login."
             )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="A signup request for this mobile number is already pending administrator review."
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A signup request for this mobile number is already pending administrator review."
+        )
 
     new_request = SignupRequest(
         mobile_number=cleaned_mobile,
@@ -47,8 +92,6 @@ async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
         street=payload.street.strip(),
         city=payload.city.strip(),
         email=payload.email.strip().lower(),
-        
-        # Extended fields from Signup UI
         masjid_reg_id=payload.masjid_reg_id.strip() if payload.masjid_reg_id else None,
         whatsapp_number=payload.whatsapp_number.strip() if payload.whatsapp_number else None,
         website=payload.website.strip() if payload.website else None,
@@ -60,15 +103,13 @@ async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
         admin_mobile=payload.admin_mobile.strip() if payload.admin_mobile else None,
         admin_email=payload.admin_email.strip() if payload.admin_email else None,
         admin_role=payload.admin_role.strip() if payload.admin_role else None,
-
         status=SignupStatus.PENDING.value
     )
-    
+
     db.add(new_request)
     db.commit()
     db.refresh(new_request)
 
-    # Trigger Webhook asynchronously
     webhook_data = {
         "signup_request_id": new_request.id,
         "masjid_name": new_request.masjid_name,
@@ -88,7 +129,6 @@ async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
         "admin_email": new_request.admin_email,
         "admin_role": new_request.admin_role
     }
-    
     asyncio.create_task(send_signup_webhook(webhook_data))
 
     return SignupResponse(
@@ -103,51 +143,36 @@ async def public_signup(payload: SignupCreate, db: Session = Depends(get_db)):
         created_at=new_request.created_at
     )
 
+
 @router.post("/send-otp")
 async def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
-    """
-    Sends an OTP to the user's mobile number if approved by Admin.
-    """
+    """Send an OTP only for the uniquely resolved active account."""
     cleaned_mobile = payload.mobile_number
-    
-    # Verify if mobile number belongs to an approved Masjid
-    approved_masjid = db.query(Masjid).filter(
-        (Masjid.mobile_number == cleaned_mobile) | (Masjid.admin_mobile == cleaned_mobile),
-        Masjid.status == "active"
-    ).first()
+    approved_masjid = find_active_masjid_for_mobile(db, cleaned_mobile)
 
     if not approved_masjid:
-        # Check if pending
         pending = db.query(SignupRequest).filter(
             (SignupRequest.mobile_number == cleaned_mobile) | (SignupRequest.admin_mobile == cleaned_mobile),
             SignupRequest.status == SignupStatus.PENDING.value
         ).first()
-
         if pending:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Your registration request is still pending admin approval. You will be notified once approved."
             )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="No registered or approved Masjid account found with this mobile number. Please sign up first."
-            )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No registered or approved Masjid account found with this mobile number. Please sign up first."
+        )
 
-    res = await generate_and_send_otp(db, cleaned_mobile)
-    return res
+    return await generate_and_send_otp(db, cleaned_mobile)
+
 
 @router.post("/verify-otp", response_model=TokenResponse)
 async def verify_otp_and_login(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
-    """
-    Verifies OTP and generates User JWT access token.
-    """
+    """Verify OTP and issue a JWT bound to the exact Masjid account that logged in."""
     cleaned_mobile = payload.mobile_number
-    
-    approved_masjid = db.query(Masjid).filter(
-        (Masjid.mobile_number == cleaned_mobile) | (Masjid.admin_mobile == cleaned_mobile),
-        Masjid.status == "active"
-    ).first()
+    approved_masjid = find_active_masjid_for_mobile(db, cleaned_mobile)
 
     if not approved_masjid:
         raise HTTPException(
@@ -169,55 +194,39 @@ async def verify_otp_and_login(payload: VerifyOTPRequest, db: Session = Depends(
         "role": "user"
     })
 
-    user_info = {
-        "masjid_id": approved_masjid.id,
-        "masjid_name": approved_masjid.masjid_name,
-        "mobile_number": approved_masjid.mobile_number,
-        "email": approved_masjid.admin_email or approved_masjid.email,
-        "city": approved_masjid.city,
-        "admin_name": approved_masjid.admin_name or approved_masjid.masjid_name,
-        "full_name": approved_masjid.admin_name or approved_masjid.masjid_name,
-        "admin_role": approved_masjid.admin_role or "Administrator",
-        "admin_mobile": approved_masjid.admin_mobile or approved_masjid.mobile_number,
-        "profile_photo": approved_masjid.profile_photo or None
-    }
-
     return TokenResponse(
         access_token=access_token,
         token_type="bearer",
         role="user",
-        user_info=user_info
+        user_info=build_user_info(approved_masjid)
     )
+
 
 @router.post("/logout")
 async def logout():
     return {"message": "Logged out successfully"}
 
+
 @router.get("/me")
 async def get_me(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Return only the Masjid represented by the authenticated JWT subject."""
     masjid_id = current_user.get("sub")
-    masjid = db.query(Masjid).filter(Masjid.id == int(masjid_id)).first() if masjid_id and str(masjid_id).isdigit() else None
-    
-    user_info = None
-    if masjid:
-        user_info = {
-            "masjid_id": masjid.id,
-            "masjid_name": masjid.masjid_name,
-            "mobile_number": masjid.mobile_number,
-            "email": masjid.admin_email or masjid.email,
-            "city": masjid.city,
-            "admin_name": masjid.admin_name or masjid.masjid_name,
-            "full_name": masjid.admin_name or masjid.masjid_name,
-            "admin_role": masjid.admin_role or "Administrator",
-            "admin_mobile": masjid.admin_mobile or masjid.mobile_number,
-            "profile_photo": masjid.profile_photo or None
-        }
+    if not masjid_id or not str(masjid_id).isdigit():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user identity in authentication token.")
+
+    masjid = db.query(Masjid).filter(
+        Masjid.id == int(masjid_id),
+        Masjid.status == "active"
+    ).first()
+    if not masjid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authenticated account is no longer active.")
 
     return {
         "user": current_user,
-        "user_info": user_info,
+        "user_info": build_user_info(masjid),
         "masjid": masjid
     }
+
 
 @router.put("/profile")
 async def update_user_profile(
@@ -225,14 +234,15 @@ async def update_user_profile(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Update only the account represented by the authenticated JWT subject."""
     masjid_id = current_user.get("sub")
-    masjid = None
-    if masjid_id and str(masjid_id).isdigit():
-        masjid = db.query(Masjid).filter(Masjid.id == int(masjid_id)).first()
-    
-    if not masjid:
-        masjid = db.query(Masjid).filter(Masjid.status == "active").first()
+    if not masjid_id or not str(masjid_id).isdigit():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user identity in authentication token.")
 
+    masjid = db.query(Masjid).filter(
+        Masjid.id == int(masjid_id),
+        Masjid.status == "active"
+    ).first()
     if not masjid:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Masjid account not found.")
 
@@ -254,47 +264,35 @@ async def update_user_profile(
     db.commit()
     db.refresh(masjid)
 
-    updated_user_info = {
-        "masjid_id": masjid.id,
-        "masjid_name": masjid.masjid_name,
-        "mobile_number": masjid.mobile_number,
-        "email": masjid.admin_email or masjid.email,
-        "city": masjid.city,
-        "admin_name": masjid.admin_name or masjid.masjid_name,
-        "full_name": masjid.admin_name or masjid.masjid_name,
-        "admin_role": masjid.admin_role or "Administrator",
-        "admin_mobile": masjid.admin_mobile or masjid.mobile_number,
-        "profile_photo": masjid.profile_photo or None
-    }
-
     return {
         "message": "Profile updated successfully",
-        "user_info": updated_user_info
+        "user_info": build_user_info(masjid)
     }
+
 
 @router.get("/logged-in-users")
 async def get_logged_in_users(
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    masjids = db.query(Masjid).filter(Masjid.status == "active").all()
-    active_users = []
-    current_sub = current_user.get("sub")
-    
-    for m in masjids:
-        is_current = str(m.id) == str(current_sub)
-        active_users.append({
-            "id": m.id,
-            "admin_name": m.admin_name or m.masjid_name,
-            "full_name": m.admin_name or m.masjid_name,
-            "admin_role": m.admin_role or "Administrator",
-            "masjid_name": m.masjid_name,
-            "city": m.city,
-            "email": m.admin_email or m.email,
-            "mobile_number": m.admin_mobile or m.mobile_number,
-            "profile_photo": m.profile_photo or None,
-            "is_current": is_current,
-            "status": "Online"
-        })
-    return {"users": active_users}
+    """Return only the authenticated user's account, never other Masjid accounts."""
+    masjid_id = current_user.get("sub")
+    if not masjid_id or not str(masjid_id).isdigit():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid user identity in authentication token.")
 
+    masjid = db.query(Masjid).filter(
+        Masjid.id == int(masjid_id),
+        Masjid.status == "active"
+    ).first()
+    if not masjid:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authenticated account is no longer active.")
+
+    info = build_user_info(masjid)
+    return {
+        "users": [{
+            **info,
+            "id": masjid.id,
+            "is_current": True,
+            "status": "Online"
+        }]
+    }
