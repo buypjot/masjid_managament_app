@@ -90,7 +90,7 @@ export const ModernMasjidDashboard = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#f5f7fb] font-sans text-slate-900">
+    <div className="mds-reference-dashboard relative min-h-screen overflow-hidden bg-[#f5f7fb] font-sans text-slate-900">
       <div className="pointer-events-none absolute -left-32 top-0 h-80 w-80 rounded-full bg-indigo-300/20 blur-3xl" />
       <div className="pointer-events-none absolute right-0 top-20 h-96 w-96 rounded-full bg-cyan-300/15 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-violet-300/10 blur-3xl" />
