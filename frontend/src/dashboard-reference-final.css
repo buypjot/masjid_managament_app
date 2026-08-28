@@ -210,3 +210,38 @@
 @media(max-width:767px){
   .mds-reference-dashboard .mds-hero-trust{max-width:72%;line-height:1.4}
 }
+
+
+/* Hero alignment correction: keep the workspace copy anchored to the left edge
+   while preserving the existing date/action group on the right. */
+.mds-reference-dashboard .mds-hero > div.relative.flex{
+  width:100%!important;
+  max-width:none!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+}
+.mds-reference-dashboard .mds-hero > div.relative.flex > div:first-child{
+  flex:1 1 auto!important;
+  min-width:0!important;
+  margin-left:0!important;
+  margin-right:auto!important;
+  text-align:left!important;
+}
+.mds-reference-dashboard .mds-hero > div.relative.flex > div:last-child{
+  flex:0 0 auto!important;
+  margin-left:auto!important;
+}
+@media(max-width:767px){
+  .mds-reference-dashboard .mds-hero > div.relative.flex{
+    width:100%!important;
+    align-items:flex-start!important;
+  }
+  .mds-reference-dashboard .mds-hero > div.relative.flex > div:first-child{
+    flex:1 1 100%!important;
+  }
+  .mds-reference-dashboard .mds-hero > div.relative.flex > div:last-child{
+    margin-left:0!important;
+  }
+}
