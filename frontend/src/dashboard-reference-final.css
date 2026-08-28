@@ -1,0 +1,14 @@
+/* Final layout guard for the supplied reference composition. */
+.mds-reference-layout > div[class*="w-[286px]"]{
+  width:230px!important;
+  flex:0 0 230px!important;
+}
+@media(max-width:1100px){
+  .mds-reference-layout > div[class*="w-[286px]"]{
+    width:220px!important;
+    flex-basis:220px!important;
+  }
+}
+@media(max-width:767px){
+  .mds-reference-layout > div[class*="w-[286px]"]{display:none!important}
+}
