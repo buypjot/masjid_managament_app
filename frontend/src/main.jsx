@@ -7,6 +7,7 @@ import './dashboard-responsive.css';
 import './dashboard-scroll-fix.css';
 import './font-size-overrides.css';
 import './sidebar-menu-typography.css';
+import './dashboard-reference.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
