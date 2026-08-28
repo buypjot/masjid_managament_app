@@ -12,6 +12,9 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { CommunityPage } from './pages/CommunityPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { PropertiesPage } from './pages/PropertiesPage';
+import AssetsPage from './pages/AssetsPage';
+import AssetMaintenancePage from './pages/AssetMaintenancePage';
+import AssetMaintenanceHistoryPage from './pages/AssetMaintenanceHistoryPage';
 
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { AdminDashboardPage } from './pages/AdminDashboardPage';
@@ -95,6 +98,13 @@ const AppFrame = () => {
           <Route path="/dashboard/properties/hall-bookings" element={<ProtectedUserRoute><PropertiesPage activeSubTab="hall-bookings" /></ProtectedUserRoute>} />
           <Route path="/dashboard/properties/cooking-vessels" element={<ProtectedUserRoute><PropertiesPage activeSubTab="cooking-vessels" /></ProtectedUserRoute>} />
           <Route path="/dashboard/properties/property-documents" element={<ProtectedUserRoute><PropertiesPage activeSubTab="property-documents" /></ProtectedUserRoute>} />
+
+          {/* Protected Assets Sub-Routes */}
+          <Route path="/dashboard/assets" element={<ProtectedUserRoute><AssetsPage activeSubTab="items" /></ProtectedUserRoute>} />
+          <Route path="/dashboard/assets/items" element={<ProtectedUserRoute><AssetsPage activeSubTab="items" /></ProtectedUserRoute>} />
+          <Route path="/dashboard/assets/maintenance" element={<ProtectedUserRoute><AssetMaintenancePage /></ProtectedUserRoute>} />
+          <Route path="/dashboard/assets/maintenance-history" element={<ProtectedUserRoute><AssetMaintenanceHistoryPage /></ProtectedUserRoute>} />
+          <Route path="/dashboard/assets/disposal" element={<ProtectedUserRoute><AssetsPage activeSubTab="disposal" /></ProtectedUserRoute>} />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLoginPage />} />

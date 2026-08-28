@@ -1522,3 +1522,53 @@ async def get_notifications(
         "count": len(items),
         "notifications": items
     }
+
+
+@router.get("/families/{family_id}/members")
+async def get_family_members(
+    family_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
+    family = db.query(Family).filter(
+        Family.id == family_id,
+        (Family.masjid_id == masjid_id) | (Family.masjid_id == None)
+    ).first()
+    if not family:
+        raise HTTPException(status_code=404, detail="Family record not found.")
+
+    members_db = db.query(FamilyMember).filter(
+        FamilyMember.family_id == family_id
+    ).all()
+
+    result = [
+        {
+            "id": 0,
+            "family_id": family.id,
+            "full_name": family.head_name,
+            "relationship_type": family.relationship_type or "Family Head",
+            "mobile_number": family.mobile_number or "",
+            "is_head": True
+        }
+    ]
+
+    for m in members_db:
+        if m.full_name.lower().strip() == family.head_name.lower().strip():
+            continue
+        result.append({
+            "id": m.id,
+            "family_id": m.family_id,
+            "full_name": m.full_name,
+            "relationship_type": m.relationship_type or "Member",
+            "mobile_number": m.mobile_number or family.mobile_number or "",
+            "is_head": False
+        })
+
+    return {
+        "family_id": family.id,
+        "family_name": family.family_name,
+        "head_name": family.head_name,
+        "members": result
+    }
+

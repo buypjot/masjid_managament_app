@@ -152,6 +152,14 @@ export const getCommunityFamilies = async (params = {}) => {
   return response.data;
 };
 
+export const getFamilies = getCommunityFamilies;
+
+export const getFamilyMembers = async (familyId) => {
+  const response = await api.get(`/api/community/families/${familyId}/members`);
+  return response.data;
+};
+
+
 export const createCommunityFamily = async (data) => {
   const response = await api.post('/api/community/families', data);
   return response.data;
@@ -349,6 +357,11 @@ export const getTenants = async () => {
   return response.data;
 };
 
+export const getTenantRentDetail = async (tenantId) => {
+  const response = await api.get(`/api/properties/tenants/${tenantId}/detail`);
+  return response.data;
+};
+
 export const createTenant = async (data) => {
   const response = await api.post('/api/properties/tenants/list', data);
   return response.data;
@@ -364,6 +377,12 @@ export const createRentCollection = async (data) => {
   return response.data;
 };
 
+export const confirmRentPayment = async (data) => {
+  const response = await api.post('/api/properties/collections/confirm-payment', data);
+  return response.data;
+};
+
+
 export const getHallBookings = async () => {
   const response = await api.get('/api/properties/hall-bookings/list');
   return response.data;
@@ -374,6 +393,44 @@ export const createHallBooking = async (data) => {
   return response.data;
 };
 
+export const updateHallBooking = async (id, data) => {
+  const response = await api.put(`/api/properties/hall-bookings/${id}`, data);
+  return response.data;
+};
+
+export const updateHallBookingStatus = async (id, status) => {
+  const response = await api.patch(`/api/properties/hall-bookings/${id}/status?status=${encodeURIComponent(status)}`);
+  return response.data;
+};
+
+export const deleteHallBooking = async (id) => {
+  const response = await api.delete(`/api/properties/hall-bookings/${id}`);
+  return response.data;
+};
+
+
+// Vessel Category API Calls
+export const getVesselCategories = async () => {
+  const response = await api.get('/api/properties/vessel-categories/list');
+  return response.data;
+};
+
+export const createVesselCategory = async (data) => {
+  const response = await api.post('/api/properties/vessel-categories/list', data);
+  return response.data;
+};
+
+export const updateVesselCategory = async (id, data) => {
+  const response = await api.put(`/api/properties/vessel-categories/${id}`, data);
+  return response.data;
+};
+
+export const deleteVesselCategory = async (id) => {
+  const response = await api.delete(`/api/properties/vessel-categories/${id}`);
+  return response.data;
+};
+
+// Cooking Vessel API Calls
 export const getCookingVessels = async () => {
   const response = await api.get('/api/properties/vessels/list');
   return response.data;
@@ -384,8 +441,24 @@ export const createCookingVessel = async (data) => {
   return response.data;
 };
 
-export const getPropertyDocuments = async () => {
-  const response = await api.get('/api/properties/documents/list');
+export const updateCookingVessel = async (id, data) => {
+  const response = await api.put(`/api/properties/vessels/${id}`, data);
+  return response.data;
+};
+
+export const updateCookingVesselStatus = async (id, status) => {
+  const response = await api.patch(`/api/properties/vessels/${id}/status?status=${encodeURIComponent(status)}`);
+  return response.data;
+};
+
+export const deleteCookingVessel = async (id) => {
+  const response = await api.delete(`/api/properties/vessels/${id}`);
+  return response.data;
+};
+
+export const getPropertyDocuments = async (category = null) => {
+  const url = category ? `/api/properties/documents/list?category=${encodeURIComponent(category)}` : '/api/properties/documents/list';
+  const response = await api.get(url);
   return response.data;
 };
 
@@ -394,5 +467,72 @@ export const createPropertyDocument = async (data) => {
   return response.data;
 };
 
+export const deletePropertyDocument = async (id) => {
+  const response = await api.delete(`/api/properties/documents/${id}`);
+  return response.data;
+};
+
+export const getRentStats = async () => {
+  const response = await api.get('/api/properties/rent-stats');
+  return response.data;
+};
+
+export const getTenantHistory = async (tenantId) => {
+  const response = await api.get(`/api/properties/tenants/${tenantId}/history`);
+  return response.data;
+};
+
+// Asset API Calls
+export const getAssets = async () => {
+  const response = await api.get('/api/properties/assets/list');
+  return response.data;
+};
+
+export const createAsset = async (data) => {
+  const response = await api.post('/api/properties/assets/list', data);
+  return response.data;
+};
+
+export const updateAssetStatus = async (id, status, extraData = {}) => {
+  const response = await api.patch(`/api/properties/assets/${id}/status`, { status, ...extraData });
+  return response.data;
+};
+
+export const deleteAsset = async (id) => {
+  const response = await api.delete(`/api/properties/assets/${id}`);
+  return response.data;
+};
+
+export const getAssetMaintenances = async () => {
+  const response = await api.get('/api/properties/assets/maintenance/list');
+  return response.data;
+};
+
+export const createAssetMaintenance = async (data) => {
+  const response = await api.post('/api/properties/assets/maintenance/list', data);
+  return response.data;
+};
+
+export const updateAssetMaintenance = async (id, data) => {
+  const response = await api.put(`/api/properties/assets/maintenance/${id}`, data);
+  return response.data;
+};
+
+export const deleteAssetMaintenance = async (id) => {
+  const response = await api.delete(`/api/properties/assets/maintenance/${id}`);
+  return response.data;
+};
+
+export const getAssetDisposals = async () => {
+  const response = await api.get('/api/properties/assets/disposals/list');
+  return response.data;
+};
+
+export const createAssetDisposal = async (data) => {
+  const response = await api.post('/api/properties/assets/dispose', data);
+  return response.data;
+};
+
 export default api;
+
 

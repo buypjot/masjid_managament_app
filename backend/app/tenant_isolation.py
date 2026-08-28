@@ -112,6 +112,9 @@ def migrate_tenant_columns(engine):
         "hall_bookings",
         "cooking_vessels",
         "property_documents",
+        "asset_items",
+        "asset_maintenance_records",
+        "asset_disposals",
     ]
 
     timestamp_columns = {
@@ -130,6 +133,9 @@ def migrate_tenant_columns(engine):
         "hall_bookings": "created_at",
         "cooking_vessels": "created_at",
         "property_documents": "created_at",
+        "asset_items": "created_at",
+        "asset_maintenance_records": "created_at",
+        "asset_disposals": "created_at",
     }
 
     with engine.begin() as conn:

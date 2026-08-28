@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Bell, Users, Wallet, Landmark, Building2, Package, Heart,
   UserCheck, ShieldCheck, PlusCircle, FileText, BarChart3, Settings,
   ChevronDown, ChevronRight, Home, User, IndianRupee, AlertCircle,
-  LayoutGrid, Sparkles, Menu, X, LogOut
+  LayoutGrid, Sparkles, Menu, X, LogOut, Wrench, History, XCircle
 } from 'lucide-react';
 
 const navMenuItems = [
@@ -39,7 +39,12 @@ const navMenuItems = [
     { name: 'Cooking Vessels', path: '/dashboard/properties/cooking-vessels', icon: Sparkles },
     { name: 'Property Documents', path: '/dashboard/properties/property-documents', icon: FileText },
   ]},
-  { name: 'Assets', icon: Package, subItems: [{ name: 'Equipment Inventory' }, { name: 'Maintenance Records' }] },
+  { name: 'Assets', icon: Package, subItems: [
+    { name: 'Assets', path: '/dashboard/assets/items', icon: Package },
+    { name: 'Maintenance', path: '/dashboard/assets/maintenance', icon: Wrench },
+    { name: 'Maintenance History', path: '/dashboard/assets/maintenance-history', icon: History },
+    { name: 'Asset Disposal', path: '/dashboard/assets/disposal', icon: XCircle },
+  ]},
   { name: 'Welfare', icon: Heart, subItems: [{ name: 'Zakat Distribution' }, { name: 'Medical Assistance' }, { name: 'Scholarships' }] },
   { name: 'People & Payroll', icon: UserCheck, subItems: [{ name: 'Imam & Staff Payroll' }, { name: 'Duty Rosters' }] },
   { name: 'Trustees & Management', icon: ShieldCheck, subItems: [{ name: 'Trustees & Members' }, { name: 'Meeting Minutes' }] },

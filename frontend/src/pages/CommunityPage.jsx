@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { UserSidebar } from '../components/Sidebar';
 import {
@@ -44,7 +44,9 @@ import {
   Wallet,
   ChevronDown,
   ChevronUp,
-  Trash2
+  Trash2,
+  Image,
+  Paperclip
 } from 'lucide-react';
 
 
@@ -119,6 +121,57 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
   const [editingMemberId, setEditingMemberId] = useState(null);
   const [generatedMemberCode, setGeneratedMemberCode] = useState('');
   const [isMemberSubmitting, setIsMemberSubmitting] = useState(false);
+
+  // Member Document Upload State & Ref
+  const memberFileInputRef = useRef(null);
+  const [selectedMemberFiles, setSelectedMemberFiles] = useState([]);
+  const [isDraggingDoc, setIsDraggingDoc] = useState(false);
+
+  const handleMemberFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processMemberFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handleMemberFileDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingDoc(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processMemberFiles(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const processMemberFiles = (newFiles) => {
+    const formatted = newFiles.map((file) => {
+      const sizeStr = file.size > 1024 * 1024 
+        ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
+        : `${(file.size / 1024).toFixed(1)} KB`;
+      const ext = file.name.split('.').pop().toUpperCase();
+      return {
+        name: file.name,
+        size: sizeStr,
+        type: ext,
+        rawFile: file,
+      };
+    });
+
+    setSelectedMemberFiles((prev) => {
+      const updated = [...prev, ...formatted];
+      const docNames = updated.map((f) => f.name).join(', ');
+      setMemberForm((form) => ({ ...form, document_name: docNames }));
+      return updated;
+    });
+  };
+
+  const handleRemoveMemberFile = (indexToRemove) => {
+    setSelectedMemberFiles((prev) => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      const docNames = updated.map((f) => f.name).join(', ');
+      setMemberForm((form) => ({ ...form, document_name: docNames }));
+      return updated;
+    });
+    if (memberFileInputRef.current) memberFileInputRef.current.value = '';
+  };
 
   // Family Head Changes & Modification Comparison State
   const [headChangesList, setHeadChangesList] = useState([]);
@@ -636,6 +689,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
   // Open Add Member Modal with Auto-Generated Token Preview
   const handleOpenAddMemberModal = async (initialFamilyId = null) => {
     setEditingMemberId(null);
+    setSelectedMemberFiles([]);
+    if (memberFileInputRef.current) memberFileInputRef.current.value = '';
     const targetFamId = initialFamilyId || (familiesData.length > 0 ? familiesData[0].id : '');
     setMemberForm({
       full_name: '',
@@ -684,6 +739,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
     if (e) e.stopPropagation();
     setEditingMemberId(member.id);
     const targetFamId = member.family_id || (family?.id || (familiesData.length > 0 ? familiesData[0].id : ''));
+    const docName = member.document_name || '';
     setMemberForm({
       full_name: member.full_name || '',
       gender: member.gender || 'Male',
@@ -696,8 +752,21 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       occupation: member.occupation || '',
       education: member.education || '',
       email: member.email || '',
-      document_name: member.document_name || '',
+      document_name: docName,
     });
+    if (docName) {
+      const fileNames = docName.split(',').map((s) => s.trim()).filter(Boolean);
+      setSelectedMemberFiles(
+        fileNames.map((fn) => ({
+          name: fn,
+          size: 'Saved Document',
+          type: fn.split('.').pop().toUpperCase(),
+        }))
+      );
+    } else {
+      setSelectedMemberFiles([]);
+    }
+    if (memberFileInputRef.current) memberFileInputRef.current.value = '';
     setGeneratedMemberCode(member.member_code || `M-${member.id}`);
     setSelectedMemberForView(null);
     setShowAddMemberModal(true);
@@ -708,6 +777,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
     setShowAddMemberModal(false);
     setEditingMemberId(null);
     setGeneratedMemberCode('');
+    setSelectedMemberFiles([]);
+    if (memberFileInputRef.current) memberFileInputRef.current.value = '';
     setMemberForm({
       full_name: '',
       gender: 'Male',
@@ -2080,14 +2151,122 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               </div>
 
               {/* Section 3: Documents Card */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3 shadow-sm">
-                <h4 className="text-sm font-bold text-slate-900">Documents</h4>
-                <div className="border-2 border-dashed border-slate-200/90 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-slate-50 transition-colors cursor-pointer space-y-2">
-                  <Upload className="w-6 h-6 text-slate-400 mx-auto" />
-                  <p className="text-xs font-semibold text-slate-500">
-                    Drop ID documents here or click to upload
-                  </p>
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                    <FileText className="w-4 h-4 text-slate-700" />
+                    <span>Documents</span>
+                  </h4>
+                  {selectedMemberFiles.length > 0 && (
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                      {selectedMemberFiles.length} {selectedMemberFiles.length === 1 ? 'document attached' : 'documents attached'}
+                    </span>
+                  )}
                 </div>
+
+                {/* Hidden Native File Input */}
+                <input
+                  ref={memberFileInputRef}
+                  type="file"
+                  onChange={handleMemberFileChange}
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  multiple
+                  className="hidden"
+                />
+
+                {/* Drop Zone Box */}
+                <div
+                  onClick={() => memberFileInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDraggingDoc(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsDraggingDoc(false);
+                  }}
+                  onDrop={handleMemberFileDrop}
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer space-y-2.5 ${
+                    isDraggingDoc
+                      ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01]'
+                      : 'border-slate-200/90 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto shadow-xs">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-700">
+                      Drop ID documents here or <span className="text-indigo-600 underline">click to upload</span>
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium mt-1">
+                      Supports JPG, PNG, WEBP, PDF, WORD (.doc, .docx) & all document formats up to 10MB
+                    </p>
+                  </div>
+                </div>
+
+                {/* Attached Files List */}
+                {selectedMemberFiles.length > 0 && (
+                  <div className="space-y-2 pt-1">
+                    <p className="text-xs font-extrabold text-slate-700">Attached Documents:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {selectedMemberFiles.map((file, idx) => {
+                        const isPdf = file.type === 'PDF' || file.name.endsWith('.pdf');
+                        const isImg = ['JPG', 'JPEG', 'PNG', 'WEBP'].includes(file.type) || /\.(jpg|jpeg|png|webp)$/i.test(file.name);
+                        const isWord = ['DOC', 'DOCX'].includes(file.type) || /\.(doc|docx)$/i.test(file.name);
+
+                        let badgeBg = 'bg-slate-100 text-slate-700';
+                        let iconColor = 'text-slate-500';
+                        if (isPdf) {
+                          badgeBg = 'bg-rose-100 text-rose-800';
+                          iconColor = 'text-rose-600';
+                        } else if (isImg) {
+                          badgeBg = 'bg-amber-100 text-amber-800';
+                          iconColor = 'text-amber-600';
+                        } else if (isWord) {
+                          badgeBg = 'bg-indigo-100 text-indigo-800';
+                          iconColor = 'text-indigo-600';
+                        }
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50/80 transition-colors shadow-2xs group"
+                          >
+                            <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                              <div className={`p-1.5 rounded-lg ${badgeBg} shrink-0`}>
+                                {isImg ? (
+                                  <Image className="w-4 h-4 text-amber-600" />
+                                ) : (
+                                  <FileText className={`w-4 h-4 ${iconColor}`} />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-slate-800 truncate" title={file.name}>
+                                  {file.name}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                  {file.type} {file.size ? `• ${file.size}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveMemberFile(idx);
+                              }}
+                              className="w-6 h-6 rounded-lg bg-slate-100 hover:bg-rose-100 hover:text-rose-600 text-slate-400 flex items-center justify-center transition-colors shrink-0 cursor-pointer"
+                              title="Remove file"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons Footer */}
