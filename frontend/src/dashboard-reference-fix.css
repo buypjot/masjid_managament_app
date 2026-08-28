@@ -4,11 +4,11 @@
 .mds-reference-layout{background:#f5faf8!important}
 
 .mds-reference-layout > div.hidden.h-screen.shrink-0.lg\\:block{
-  width:230px!important;
-  flex:0 0 230px!important;
+  width:250px!important;
+  flex:0 0 250px!important;
 }
 .mds-reference-sidebar{
-  width:230px!important;
+  width:250px!important;
   padding:14px 12px!important;
   background:#fff!important;
   border-right:1px solid #dcebe4!important;

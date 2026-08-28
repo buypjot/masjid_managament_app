@@ -153,16 +153,16 @@ export const ModernUserSidebar = () => {
               <NavLink
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs sm:text-[13px] font-extrabold transition ${
+                className={`flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-xs sm:text-[13px] font-extrabold transition ${
                   isActive
                     ? 'bg-slate-950 text-white shadow-md shadow-slate-900/10'
                     : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
                 }`}
               >
-                <Icon className="h-4 w-4" />
-                <span>{item.name}</span>
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{item.name}</span>
                 {item.name === 'Notifications' && (
-                  <span className="ml-auto h-2 w-2 rounded-full bg-rose-500" />
+                  <span className="ml-auto h-2 w-2 shrink-0 rounded-full bg-rose-500" />
                 )}
               </NavLink>
             );
@@ -176,11 +176,11 @@ export const ModernUserSidebar = () => {
                   open ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950'
                 }`}
               >
-                <span className="flex items-center gap-3">
-                  <Icon className="h-4 w-4" />
-                  {item.name}
+                <span className="flex min-w-0 items-center gap-3">
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </span>
-                {open ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
               </button>
 
               {open && (
