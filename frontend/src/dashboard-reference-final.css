@@ -12,3 +12,186 @@
 @media(max-width:767px){
   .mds-reference-layout > div[class*="w-[286px]"]{display:none!important}
 }
+
+
+/* Premium Secure Workspace hero + micro-interaction layer */
+.mds-reference-dashboard .mds-hero{
+  min-height:160px!important;
+  height:160px!important;
+  display:flex!important;
+  align-items:center!important;
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+  padding:24px 28px!important;
+  border-radius:20px!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  background:
+    linear-gradient(90deg,rgba(5,108,82,.98) 0%,rgba(8,143,113,.96) 48%,rgba(15,157,126,.82) 100%)!important;
+  box-shadow:0 18px 42px rgba(5,118,91,.18)!important;
+}
+.mds-reference-dashboard .mds-hero::before{
+  content:"";
+  position:absolute;
+  inset:-30%;
+  z-index:-2;
+  background:linear-gradient(115deg,transparent 20%,rgba(255,255,255,.10) 45%,transparent 65%);
+  transform:translateX(-35%);
+  animation:mdsHeroShimmer 9s ease-in-out infinite;
+}
+.mds-reference-dashboard .mds-hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  opacity:.18;
+  background-image:
+    linear-gradient(30deg,rgba(255,255,255,.14) 12%,transparent 12.5%,transparent 87%,rgba(255,255,255,.14) 87.5%,rgba(255,255,255,.14)),
+    linear-gradient(150deg,rgba(255,255,255,.12) 12%,transparent 12.5%,transparent 87%,rgba(255,255,255,.12) 87.5%,rgba(255,255,255,.12));
+  background-size:42px 72px;
+  background-position:0 0,21px 36px;
+  mask-image:linear-gradient(to right,transparent,black 18%,black 80%,transparent);
+}
+.mds-reference-dashboard .mds-hero>div:not(.mds-hero-mosque){
+  position:relative;
+  z-index:4;
+}
+.mds-reference-dashboard .mds-hero h1{
+  color:#fff!important;
+  font-size:31px!important;
+  line-height:1.08!important;
+  letter-spacing:-.04em!important;
+  text-shadow:0 2px 12px rgba(0,60,45,.16)!important;
+}
+.mds-reference-dashboard .mds-hero p{
+  color:rgba(244,255,251,.92)!important;
+  max-width:560px!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+}
+.mds-reference-dashboard .mds-hero [class*="border-white"]{
+  border-color:rgba(255,255,255,.34)!important;
+}
+.mds-reference-dashboard .mds-hero .mds-hero-secure{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:7px;
+  padding:6px 11px;
+  border:1px solid rgba(255,255,255,.26);
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  backdrop-filter:blur(8px);
+}
+.mds-reference-dashboard .mds-hero .bg-white{
+  background:#fff!important;
+  color:#075f4b!important;
+  box-shadow:0 10px 24px rgba(0,62,45,.18)!important;
+}
+.mds-reference-dashboard .mds-hero .bg-white:hover{
+  transform:translateY(-2px) scale(1.015)!important;
+  box-shadow:0 14px 30px rgba(0,62,45,.22)!important;
+}
+.mds-reference-dashboard .mds-hero-mosque{
+  position:absolute!important;
+  z-index:2!important;
+  right:-2%;
+  bottom:-48px;
+  width:min(48%,720px);
+  height:210px;
+  pointer-events:none;
+  overflow:hidden;
+  border-radius:120px 0 0 0;
+  opacity:.92;
+  mix-blend-mode:screen;
+  mask-image:linear-gradient(to right,transparent 0%,black 16%,black 100%);
+}
+.mds-reference-dashboard .mds-hero-mosque img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center 42%;
+  display:block;
+  filter:saturate(.82) brightness(1.12) contrast(.92);
+  opacity:.76;
+  transform:scale(1.08);
+  animation:mdsMosqueFloat 10s ease-in-out infinite;
+}
+.mds-reference-dashboard .mds-hero-mosque::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,#0b9277 0%,rgba(11,146,119,.40) 24%,rgba(11,146,119,.04) 70%,transparent 100%);
+}
+@keyframes mdsHeroShimmer{
+  0%,55%{transform:translateX(-35%)}
+  75%,100%{transform:translateX(35%)}
+}
+@keyframes mdsMosqueFloat{
+  0%,100%{transform:scale(1.08) translate3d(0,0,0)}
+  50%{transform:scale(1.11) translate3d(-8px,-3px,0)}
+}
+@keyframes mdsCardRise{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div{
+  animation:mdsCardRise .55s cubic-bezier(.2,.75,.2,1) both!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(1){animation-delay:.04s!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(2){animation-delay:.10s!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(3){animation-delay:.16s!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(4){animation-delay:.22s!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div,
+.mds-reference-dashboard main>section:nth-of-type(3)>div,
+.mds-reference-dashboard main>section:nth-of-type(4)>div{
+  will-change:transform;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:hover{
+  transform:translateY(-5px) scale(1.008)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(3)>div:hover,
+.mds-reference-dashboard main>section:nth-of-type(4)>div:hover{
+  transform:translateY(-2px)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div svg{
+  transition:transform .28s ease;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:hover svg{
+  transform:scale(1.08) rotate(-3deg);
+}
+@media(max-width:767px){
+  .mds-reference-dashboard .mds-hero{
+    height:auto!important;
+    min-height:250px!important;
+    padding:20px!important;
+    align-items:flex-start!important;
+  }
+  .mds-reference-dashboard .mds-hero-mosque{
+    width:82%;
+    height:145px;
+    right:-12%;
+    bottom:-28px;
+    opacity:.72;
+  }
+  .mds-reference-dashboard .mds-hero h1{
+    font-size:27px!important;
+    max-width:75%;
+  }
+  .mds-reference-dashboard .mds-hero p{max-width:70%!important}
+  .mds-reference-dashboard .mds-hero .mds-hero-secure{
+    margin:7px 0 0;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .mds-reference-dashboard .mds-hero::before,
+  .mds-reference-dashboard .mds-hero-mosque img,
+  .mds-reference-dashboard main>section:nth-of-type(2)>div{
+    animation:none!important;
+  }
+}
