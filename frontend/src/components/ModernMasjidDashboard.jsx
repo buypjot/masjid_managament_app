@@ -148,7 +148,7 @@ export const ModernMasjidDashboard = () => {
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-slate-200/70 bg-white/70 px-4 py-5 text-center text-xs font-semibold text-slate-500 backdrop-blur"><span>{masjidName}</span> · Live PostgreSQL Backend Connected</footer>
+
 
       {showSearch && <div className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/40 p-4 pt-20 backdrop-blur-sm" onMouseDown={() => setShowSearch(false)}><div className="w-full max-w-2xl rounded-3xl border border-white/40 bg-white p-5 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}><div className="flex items-center gap-3"><Search className="h-5 w-5 text-indigo-500" /><input autoFocus value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search dashboard modules..." className="flex-1 bg-transparent text-sm font-bold text-slate-900 outline-none placeholder:text-slate-400" /><button onClick={() => setShowSearch(false)}><X className="h-5 w-5 text-slate-400" /></button></div><div className="mt-4 space-y-2">{filteredModules.map((module) => <button key={module.title} onClick={() => { setShowSearch(false); navigate(module.path); }} className="flex w-full items-center gap-3 rounded-2xl border border-slate-100 p-3 text-left hover:bg-slate-50"><module.icon className="h-5 w-5 text-indigo-500" /><span className="flex-1"><span className="block text-xs sm:text-sm font-black">{module.title}</span><span className="text-xs text-slate-500">{module.description}</span></span><ArrowRight className="h-4 w-4 text-slate-300" /></button>)}{filteredModules.length === 0 && <div className="py-6 text-center text-xs text-slate-400">No matching modules.</div>}</div></div></div>}
 
