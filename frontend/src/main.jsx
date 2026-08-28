@@ -9,6 +9,7 @@ import './font-size-overrides.css';
 import './sidebar-menu-typography.css';
 import './dashboard-reference.css';
 import './dashboard-reference-fix.css';
+import './dashboard-reference-final.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
