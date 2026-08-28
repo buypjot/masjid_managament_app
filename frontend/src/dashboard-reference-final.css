@@ -245,3 +245,61 @@
     margin-left:0!important;
   }
 }
+
+
+/* Definitive hero copy anchoring: the workspace text must begin at the
+   banner's own left padding, independent of flex/max-width rules elsewhere. */
+.mds-reference-dashboard .mds-hero{
+  position:relative!important;
+}
+.mds-reference-dashboard .mds-hero > div.relative.flex{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  max-width:none!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:24px 28px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+}
+.mds-reference-dashboard .mds-hero > div.relative.flex > div:first-child{
+  position:relative!important;
+  left:0!important;
+  right:auto!important;
+  margin:0!important;
+  padding:0!important;
+  flex:1 1 auto!important;
+  width:auto!important;
+  max-width:62%!important;
+  min-width:0!important;
+  text-align:left!important;
+  transform:none!important;
+}
+.mds-reference-dashboard .mds-hero > div.relative.flex > div:last-child{
+  position:relative!important;
+  right:0!important;
+  margin:0 0 0 auto!important;
+  padding:0!important;
+  flex:0 0 auto!important;
+  transform:none!important;
+}
+@media(max-width:767px){
+  .mds-reference-dashboard .mds-hero > div.relative.flex{
+    padding:20px!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    gap:14px!important;
+  }
+  .mds-reference-dashboard .mds-hero > div.relative.flex > div:first-child{
+    max-width:78%!important;
+    width:100%!important;
+  }
+  .mds-reference-dashboard .mds-hero > div.relative.flex > div:last-child{
+    margin:0!important;
+    width:100%!important;
+  }
+}
