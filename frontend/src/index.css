@@ -89,3 +89,110 @@ input::placeholder,textarea::placeholder{color:#9aada6;opacity:1}
 }
 
 
+
+
+/* Animated, colorful statistic cards — UI only */
+.mds-reference-dashboard .mds-stat-card{
+  position:relative;
+  min-height:154px;
+  isolation:isolate;
+  border-width:1px !important;
+  border-style:solid !important;
+  border-radius:22px !important;
+  clip-path:none !important;
+  -webkit-clip-path:none !important;
+  overflow:hidden !important;
+  box-shadow:0 12px 30px rgba(8,127,91,.10), inset 0 1px 0 rgba(255,255,255,.55) !important;
+  animation:mdsCardIn .55s cubic-bezier(.2,.75,.25,1) both;
+}
+.mds-reference-dashboard .mds-stat-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(120deg,rgba(255,255,255,.18),transparent 42%,rgba(255,255,255,.12));
+  transform:translateX(-110%);
+  animation:mdsCardShine 1.15s ease-out both;
+}
+.mds-reference-dashboard .mds-stat-card::after{
+  content:"";
+  position:absolute;
+  width:150px;
+  height:150px;
+  right:-62px;
+  bottom:-74px;
+  border-radius:50%;
+  background:rgba(255,255,255,.20);
+  pointer-events:none;
+  transition:transform .45s ease,opacity .45s ease;
+}
+.mds-reference-dashboard .mds-stat-card:hover{
+  transform:translateY(-6px) scale(1.012) !important;
+  box-shadow:0 20px 42px rgba(8,127,91,.18), inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+.mds-reference-dashboard .mds-stat-card:hover::after{
+  transform:scale(1.35);
+  opacity:.75;
+}
+.mds-reference-dashboard .mds-stat-card > *{position:relative;z-index:1}
+.mds-reference-dashboard .mds-stat-card--indigo{
+  background:linear-gradient(135deg,#dff7ec 0%,#c8f0df 52%,#e4f8f0 100%) !important;
+  border-color:#a8ddc6 !important;
+}
+.mds-reference-dashboard .mds-stat-card--emerald{
+  background:linear-gradient(135deg,#c9f4e5 0%,#aee8d3 52%,#d9f8ec 100%) !important;
+  border-color:#8fd5ba !important;
+}
+.mds-reference-dashboard .mds-stat-card--amber{
+  background:linear-gradient(135deg,#e5f7e9 0%,#c9efd8 52%,#e9f9ef 100%) !important;
+  border-color:#a9dcbc !important;
+}
+.mds-reference-dashboard .mds-stat-card--cyan{
+  background:linear-gradient(135deg,#d8f6ee 0%,#bcebdd 52%,#e1f8f1 100%) !important;
+  border-color:#9fd9c8 !important;
+}
+.mds-reference-dashboard .mds-stat-card .text-slate-500,
+.mds-reference-dashboard .mds-stat-card .text-slate-950{
+  color:#124d3b !important;
+}
+.mds-reference-dashboard .mds-stat-card .mds-stat-value{
+  color:#073f31 !important;
+  text-shadow:0 1px 0 rgba(255,255,255,.45);
+}
+.mds-reference-dashboard .mds-stat-icon{
+  color:#fff !important;
+  box-shadow:0 9px 20px rgba(8,127,91,.18);
+}
+.mds-reference-dashboard .mds-stat-card--indigo .mds-stat-icon{
+  background:linear-gradient(135deg,#087f5b,#18aa79) !important;
+}
+.mds-reference-dashboard .mds-stat-card--emerald .mds-stat-icon{
+  background:linear-gradient(135deg,#047857,#12a77a) !important;
+}
+.mds-reference-dashboard .mds-stat-card--amber .mds-stat-icon{
+  background:linear-gradient(135deg,#16834f,#29ae70) !important;
+}
+.mds-reference-dashboard .mds-stat-card--cyan .mds-stat-icon{
+  background:linear-gradient(135deg,#087f72,#13aa88) !important;
+}
+.mds-reference-dashboard .mds-stat-card .bg-slate-100{
+  background:rgba(255,255,255,.45) !important;
+}
+@keyframes mdsCardIn{
+  from{opacity:0;transform:translateY(18px) scale(.975)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes mdsCardShine{
+  0%{transform:translateX(-110%)}
+  45%,100%{transform:translateX(110%)}
+}
+.mds-reference-dashboard .mds-stat-card:nth-child(1){animation-delay:.04s}
+.mds-reference-dashboard .mds-stat-card:nth-child(2){animation-delay:.11s}
+.mds-reference-dashboard .mds-stat-card:nth-child(3){animation-delay:.18s}
+.mds-reference-dashboard .mds-stat-card:nth-child(4){animation-delay:.25s}
+@media(prefers-reduced-motion:reduce){
+  .mds-reference-dashboard .mds-stat-card,
+  .mds-reference-dashboard .mds-stat-card::before{animation:none !important}
+  .mds-reference-dashboard .mds-stat-card:hover{transform:none !important}
+}
