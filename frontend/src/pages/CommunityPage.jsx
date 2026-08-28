@@ -849,10 +849,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       <UserSidebar />
 
       <div className="min-w-0 h-full flex-1 overflow-y-auto flex flex-col justify-between">
-        <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="community-page-shell p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
           
           {/* Top Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
+          <div className="community-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
             <div className="flex items-center space-x-2 text-sm font-medium text-slate-500">
               <span className="hover:text-slate-700 cursor-pointer">Masjid</span>
               <span>/</span>
@@ -934,8 +934,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
           </div>
 
           {/* 3 Metric Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5">
-            <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-start justify-between">
+          <div className="community-metrics-grid grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5">
+            <div className="community-metric-card bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex items-start justify-between">
               <div className="space-y-1">
                 <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Families</span>
                 <div className="text-3xl font-black text-slate-900 tracking-tight">{stats.total_families}</div>
@@ -999,10 +999,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               </div>
 
               {/* Table */}
-              <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="community-family-table bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50/80 text-slate-500 font-extrabold uppercase tracking-wider text-[10px] border-b border-slate-200/60">
+                    <thead className="community-family-table-head bg-slate-50/80 text-slate-500 font-extrabold uppercase tracking-wider text-[10px] border-b border-slate-200/60">
                       <tr>
                         <th className="py-3.5 px-3 w-10 text-center"></th>
                         <th className="py-3.5 px-4 sm:px-5">Family Head</th>
@@ -1072,7 +1072,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           <React.Fragment key={f.id}>
                             <tr
                               onClick={(e) => toggleExpandFamily(f.id, e)}
-                              className={`hover:bg-slate-50/90 transition-colors cursor-pointer ${
+                              className={`community-family-row hover:bg-slate-50/90 transition-colors cursor-pointer ${
                                 expandedFamilyIds[f.id] ? 'bg-slate-50/80 border-l-4 border-l-emerald-500' : ''
                               }`}
                               title="Click down arrow or row to expand/collapse family members"
