@@ -98,7 +98,7 @@ export const ModernUserSidebar = () => {
   }];
 
   const sidebar = (
-    <aside className="flex h-full w-[286px] flex-col border-r border-slate-200/80 bg-white/95 px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+    <aside className="mds-reference-sidebar flex h-full w-[286px] flex-col border-r border-slate-200/80 bg-white/95 px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
       <div className="mb-4 flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-500 text-xl shadow-lg shadow-indigo-500/20">🕌</div>
