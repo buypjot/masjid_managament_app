@@ -195,3 +195,18 @@
     animation:none!important;
   }
 }
+
+.mds-reference-dashboard .mds-hero-trust{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-top:9px;
+  color:rgba(239,255,249,.84)!important;
+  font-size:11px!important;
+  font-weight:700!important;
+  letter-spacing:.01em;
+}
+.mds-reference-dashboard .mds-hero-trust svg{color:#b7f3dc!important;flex:none}
+@media(max-width:767px){
+  .mds-reference-dashboard .mds-hero-trust{max-width:72%;line-height:1.4}
+}
