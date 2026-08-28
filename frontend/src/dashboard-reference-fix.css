@@ -1,0 +1,240 @@
+/* Reference-match dashboard correction layer.
+   Presentation-only: preserves routes, API calls, state and business logic. */
+
+.mds-reference-layout{background:#f5faf8!important}
+
+.mds-reference-layout > div.hidden.h-screen.shrink-0.lg\\:block{
+  width:230px!important;
+  flex:0 0 230px!important;
+}
+.mds-reference-sidebar{
+  width:230px!important;
+  padding:14px 12px!important;
+  background:#fff!important;
+  border-right:1px solid #dcebe4!important;
+  box-shadow:4px 0 24px rgba(16,68,52,.06)!important;
+}
+.mds-reference-sidebar>div:first-child{padding:0 3px!important}
+.mds-reference-sidebar>div:first-child>div{gap:9px!important}
+.mds-reference-sidebar>div:first-child>div>div:first-child{
+  width:43px!important;height:43px!important;border-radius:14px!important;
+}
+.mds-reference-sidebar .text-sm{font-size:14px!important}
+.mds-reference-sidebar nav a,.mds-reference-sidebar nav button{
+  min-height:34px!important;
+  padding:8px 9px!important;
+  border-radius:10px!important;
+  font-size:12px!important;
+}
+.mds-reference-sidebar nav div>div{
+  margin-left:16px!important;
+  padding-left:9px!important;
+}
+.mds-reference-sidebar nav div>div a,.mds-reference-sidebar nav div>div div{
+  padding:7px 7px!important;
+  font-size:11px!important;
+}
+.mds-reference-sidebar nav svg{width:15px!important;height:15px!important}
+.mds-reference-sidebar>div:nth-of-type(2){padding:12px!important;border-radius:15px!important}
+.mds-reference-sidebar>div:nth-of-type(3){padding:10px!important;border-radius:15px!important}
+.mds-reference-sidebar>div:last-child{padding:10px!important;border-radius:14px!important;font-size:10px!important}
+
+/* Main workspace */
+.mds-reference-dashboard{
+  min-height:100%!important;
+  background:
+    radial-gradient(circle at 90% 0%,rgba(20,174,142,.12),transparent 24rem),
+    radial-gradient(circle at 5% 65%,rgba(221,170,65,.07),transparent 22rem),
+    #f5faf8!important;
+}
+.mds-reference-dashboard>header{
+  height:66px!important;
+  min-height:66px!important;
+  padding:0 20px!important;
+  background:rgba(255,255,255,.96)!important;
+  border-bottom:1px solid #e1eee8!important;
+}
+.mds-reference-dashboard>header>div{max-width:none!important}
+.mds-reference-dashboard main{
+  max-width:none!important;
+  padding:12px 16px 24px!important;
+  gap:12px!important;
+}
+
+/* Green Masjid hero matching the supplied reference */
+.mds-reference-dashboard main>section:first-child{
+  min-height:160px!important;
+  height:160px!important;
+  padding:24px 28px!important;
+  border-radius:19px!important;
+  background:
+    radial-gradient(circle at 62% 45%,rgba(255,255,255,.10),transparent 17rem),
+    radial-gradient(circle at 88% 15%,rgba(255,255,255,.07),transparent 12rem),
+    linear-gradient(110deg,#087f68 0%,#0b9879 50%,#087b68 100%)!important;
+  box-shadow:0 12px 30px rgba(7,120,92,.16)!important;
+  border:1px solid rgba(255,255,255,.25)!important;
+}
+.mds-reference-dashboard main>section:first-child::before{
+  content:"";
+  position:absolute;
+  right:4%;
+  bottom:-6px;
+  width:48%;
+  height:145px;
+  background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20700%20220%22%3E%3Cg%20fill%3D%22white%22%20opacity%3D%22.24%22%3E%3Cpath%20d%3D%22M75%20205V82h22V55h9v-25h7v25h9v27h22v123h-69z%22%2F%3E%3Cpath%20d%3D%22M585%20205V82h22V55h9v-25h7v25h9v27h22v123h-69z%22%2F%3E%3Cpath%20d%3D%22M175%20205v-62c0-47%2039-85%2087-85s87%2038%2087%2085v62h-174z%22%2F%3E%3Cpath%20d%3D%22M135%20205v-42c0-31%2026-57%2058-57s58%2026%2058%2057v42h-116z%22%2F%3E%3Cpath%20d%3D%22M326%20205v-42c0-31%2026-57%2058-57s58%2026%2058%2057v42h-116z%22%2F%3E%3Cpath%20d%3D%22M236%20205V103h52v102z%22%2F%3E%3Cpath%20d%3D%22M200%20112c0-25%2028-45%2062-45s62%2020%2062%2045z%22%2F%3E%3Cpath%20d%3D%22M262%2040h4v42h-4z%22%2F%3E%3Ccircle%20cx%3D%22264%22%20cy%3D%2235%22%20r%3D%225%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat:no-repeat;
+  background-position:right bottom;
+  background-size:contain;
+  pointer-events:none;
+  z-index:0;
+}
+.mds-reference-dashboard main>section:first-child::after{
+  content:"✦   ☾   ✦";
+  position:absolute;
+  right:25%;
+  top:22px;
+  color:rgba(255,255,255,.58);
+  font-size:18px;
+  letter-spacing:30px;
+  pointer-events:none;
+}
+.mds-reference-dashboard main>section:first-child>div{position:relative;z-index:2}
+.mds-reference-dashboard main>section:first-child h1{
+  font-size:31px!important;
+  color:#fff!important;
+  line-height:1.1!important;
+  text-shadow:none!important;
+}
+.mds-reference-dashboard main>section:first-child p{
+  max-width:530px!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+  color:rgba(255,255,255,.9)!important;
+}
+.mds-reference-dashboard main>section:first-child .bg-white{
+  color:#075f4a!important;
+}
+.mds-reference-dashboard main>section:first-child .bg-white *{color:inherit!important}
+
+/* Metric cards: explicitly prevent any inherited elliptical/50% shape */
+.mds-reference-dashboard main>section:nth-of-type(2){
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:14px!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div{
+  min-width:0!important;
+  min-height:124px!important;
+  height:124px!important;
+  padding:18px 18px!important;
+  border-radius:17px!important;
+  clip-path:none!important;
+  border:1px solid #dcebe4!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(18,73,55,.07)!important;
+  overflow:hidden!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:hover{
+  transform:translateY(-3px)!important;
+  box-shadow:0 15px 30px rgba(18,73,55,.12)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div::after{
+  content:"";
+  position:absolute;
+  right:-35px;
+  bottom:-45px;
+  width:135px;
+  height:95px;
+  border-radius:50%;
+  background:radial-gradient(circle at 40% 30%,rgba(8,127,91,.09),transparent 65%);
+  pointer-events:none;
+}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(1) .rounded-2xl{background:#eaf7f0!important;color:#087f5b!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(2) .rounded-2xl{background:#e4f8f5!important;color:#0b9d91!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(3) .rounded-2xl{background:#fff5df!important;color:#b47717!important}
+.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(4) .rounded-2xl{background:#e8f9fb!important;color:#0795a6!important}
+
+/* Chart/activity panels */
+.mds-reference-dashboard main>section:nth-of-type(3){
+  display:grid!important;
+  grid-template-columns:minmax(0,1.55fr) minmax(360px,1fr)!important;
+  gap:14px!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(3)>div{
+  min-width:0!important;
+  min-height:282px!important;
+  border-radius:17px!important;
+  border:1px solid #dcebe4!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(18,73,55,.06)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(3) [class*="from-indigo-600"]{
+  background:linear-gradient(to top,#087f5b,#13a98b,#59d8d0)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(3) [class*="bg-indigo-50"]{
+  background:#edf8f3!important;color:#087f5b!important;
+}
+
+/* Lower modules */
+.mds-reference-dashboard main>section:nth-of-type(4){
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)!important;
+  gap:14px!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(4)>div{
+  min-width:0!important;
+  border-radius:17px!important;
+  border:1px solid #dcebe4!important;
+  background:#fff!important;
+  box-shadow:0 8px 24px rgba(18,73,55,.06)!important;
+}
+.mds-reference-dashboard main>section:nth-of-type(4)>div:last-child{
+  min-height:170px!important;
+  background:linear-gradient(120deg,#dff7f1,#d9f3ee 48%,#edf9f6)!important;
+  color:#145d50!important;
+}
+
+/* Typography hierarchy matching reference */
+.mds-reference-dashboard main h2{color:#10251e!important;font-size:17px!important}
+.mds-reference-dashboard main .text-slate-500{color:#6d8279!important}
+.mds-reference-dashboard main .text-slate-400{color:#7e938b!important}
+.mds-reference-dashboard main .text-slate-950,.mds-reference-dashboard main .text-slate-900{color:#10251e!important}
+.mds-reference-dashboard main .text-xs{font-size:11px!important}
+.mds-reference-dashboard main .text-sm{font-size:13px!important}
+
+/* Keep all card icons visible and avoid dark inherited backgrounds */
+.mds-reference-dashboard main [class*="bg-slate-950"],
+.mds-reference-dashboard main [class*="bg-slate-900"],
+.mds-reference-dashboard main [class*="bg-black"]{
+  background:#eaf7f0!important;
+  color:#087f5b!important;
+  border:1px solid #d4ebe0!important;
+}
+.mds-reference-dashboard main [class*="bg-slate-950"] svg,
+.mds-reference-dashboard main [class*="bg-slate-900"] svg,
+.mds-reference-dashboard main [class*="bg-black"] svg{color:#087f5b!important}
+.mds-reference-dashboard main button[class*="bg-white"]{
+  background:#fff!important;
+  color:#087f5b!important;
+}
+
+/* Responsive: preserve the reference hierarchy on tablets/phones */
+@media(max-width:1100px){
+  .mds-reference-layout > div.hidden.h-screen.shrink-0.lg\\:block{width:220px!important;flex-basis:220px!important}
+  .mds-reference-sidebar{width:220px!important}
+  .mds-reference-dashboard main>section:nth-of-type(2){grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .mds-reference-dashboard main>section:nth-of-type(3),.mds-reference-dashboard main>section:nth-of-type(4){grid-template-columns:1fr!important}
+}
+@media(max-width:767px){
+  .mds-reference-layout > div.hidden.h-screen.shrink-0.lg\\:block{display:none!important}
+  .mds-reference-sidebar{width:min(86vw,310px)!important}
+  .mds-reference-dashboard>header{height:58px!important;min-height:58px!important;padding-left:62px!important}
+  .mds-reference-dashboard main{padding:10px!important}
+  .mds-reference-dashboard main>section:first-child{height:auto!important;min-height:235px!important;padding:20px!important}
+  .mds-reference-dashboard main>section:first-child::before{right:-5%;width:78%;height:120px}
+  .mds-reference-dashboard main>section:nth-of-type(2){grid-template-columns:1fr!important}
+  .mds-reference-dashboard main>section:nth-of-type(3),.mds-reference-dashboard main>section:nth-of-type(4){grid-template-columns:1fr!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .mds-reference-dashboard *, .mds-reference-sidebar *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
