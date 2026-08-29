@@ -69,12 +69,6 @@ export const ModernUserSidebar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
-    if (!mobileOpen) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, [mobileOpen]);
 
   const userName = userInfo?.admin_name || userInfo?.full_name || userInfo?.masjid_name || 'Admin User';
   const userRole = userInfo?.admin_role || 'Masjid Administrator';
@@ -105,7 +99,7 @@ export const ModernUserSidebar = () => {
   }];
 
   const sidebar = (
-    <aside className="mds-reference-sidebar relative z-[1] flex h-full w-[286px] min-w-[286px] flex-col border-r border-slate-200/80 !bg-white px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+    <aside className="mds-reference-sidebar flex h-full w-[286px] flex-col border-r border-slate-200/80 bg-white/95 px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
       <div className="mb-4 flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-500 text-xl shadow-lg shadow-indigo-500/20">🕌</div>
@@ -238,7 +232,6 @@ export const ModernUserSidebar = () => {
         onClick={() => setMobileOpen(true)}
         className="fixed left-4 top-4 z-40 flex items-center justify-center rounded-xl bg-slate-950 p-2.5 text-white shadow-xl lg:hidden"
         aria-label="Open Navigation Menu"
-        aria-expanded={mobileOpen}
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -247,26 +240,18 @@ export const ModernUserSidebar = () => {
         {sidebar}
       </div>
 
-      <div
-        className={`fixed inset-0 z-[100] lg:hidden ${mobileOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        aria-hidden={!mobileOpen}
-      >
-        <button
-          type="button"
-          onClick={() => setMobileOpen(false)}
-          className={`absolute inset-0 bg-slate-950/45 backdrop-blur-[2px] transition-opacity duration-300 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`}
-          aria-label="Close Navigation Menu"
-          tabIndex={mobileOpen ? 0 : -1}
-        />
-        <div
-          className={`fixed inset-y-0 left-0 z-[101] w-[286px] max-w-[88vw] transform bg-white shadow-[16px_0_45px_rgba(15,23,42,0.20)] transition-transform duration-300 ease-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-        >
-          {sidebar}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            onClick={() => setMobileOpen(false)}
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm transition-opacity"
+            aria-label="Close Menu"
+          />
+          <div className="relative h-full w-[286px] max-w-[88vw] z-10">
+            {sidebar}
+          </div>
         </div>
-      </div>
+      )}
 
       <ProfileSettingsModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </>
