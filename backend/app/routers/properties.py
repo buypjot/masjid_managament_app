@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import re
 
 from app.database import get_db
 from app.utils.security import get_current_user, get_current_masjid_id
@@ -398,6 +399,7 @@ def create_tenant(
     try:
         get_or_generate_tenant_invoice(db, db_tenant, masjid_id)
     except Exception as inv_err:
+        db.rollback()
         print("Auto-generate initial tenant invoice warning:", inv_err)
 
     res = TenantResponse.from_orm(db_tenant)
@@ -405,6 +407,54 @@ def create_tenant(
     return res
 
 
+def generate_next_invoice_no(db: Session, year: int) -> str:
+    """
+    Generate a guaranteed unique invoice number in format 'RENT-YYYY-XXX' across PostgreSQL.
+    """
+    all_invoices = db.query(RentInvoice.invoice_no).all()
+    max_num = 0
+    for (inv_code,) in all_invoices:
+        if inv_code:
+            match = re.search(r'RENT-\d+-(\d+)', inv_code, re.IGNORECASE)
+            if match:
+                num = int(match.group(1))
+                if num > max_num:
+                    max_num = num
+
+    total_count = db.query(RentInvoice).count()
+    next_num = max(max_num + 1, total_count + 1)
+
+    candidate = f"RENT-{year}-{next_num:03d}"
+    while db.query(RentInvoice).filter(RentInvoice.invoice_no == candidate).first() is not None:
+        next_num += 1
+        candidate = f"RENT-{year}-{next_num:03d}"
+
+    return candidate
+
+
+def generate_next_receipt_no(db: Session) -> str:
+    """
+    Generate a guaranteed unique receipt number in format 'RCPT-XXXX' across PostgreSQL.
+    """
+    all_collections = db.query(RentCollection.receipt_no).all()
+    max_num = 0
+    for (rcpt_code,) in all_collections:
+        if rcpt_code:
+            match = re.search(r'RCPT-(?:2026-)?(\d+)', rcpt_code, re.IGNORECASE)
+            if match:
+                num = int(match.group(1))
+                if num > max_num:
+                    max_num = num
+
+    total_count = db.query(RentCollection).count()
+    next_num = max(max_num + 1, total_count + 1, 1001)
+
+    candidate = f"RCPT-{next_num:04d}"
+    while db.query(RentCollection).filter(RentCollection.receipt_no == candidate).first() is not None:
+        next_num += 1
+        candidate = f"RCPT-{next_num:04d}"
+
+    return candidate
 
 
 # Helper to get or generate current invoice for a tenant
@@ -466,8 +516,7 @@ def get_or_generate_tenant_invoice(db: Session, tenant: Tenant, masjid_id: int):
                     except Exception:
                         pass
 
-        count = db.query(RentInvoice).filter(RentInvoice.masjid_id == masjid_id).count()
-        inv_no = f"RENT-{dt_month.year}-{count + 8:03d}"
+        inv_no = generate_next_invoice_no(db, dt_month.year)
         prop_name = tenant.property.property_name if tenant.property else "Commercial Complex"
         inv_date = dt_month.strftime("01 %b %Y")
 
@@ -480,26 +529,30 @@ def get_or_generate_tenant_invoice(db: Session, tenant: Tenant, masjid_id: int):
         if now.date() > due_date_dt.date():
             init_status = "Overdue"
 
-        invoice = RentInvoice(
-            masjid_id=masjid_id,
-            invoice_no=inv_no,
-            tenant_id=tenant.id,
-            tenant_name=tenant.name,
-            property_name=prop_name,
-            assigned_shop=tenant.assigned_shop or "Unit 01",
-            for_month=month_name,
-            invoice_date=inv_date,
-            due_date=due_date,
-            rent_amount=tenant.monthly_rent or 0.0,
-            late_fee=0.0,
-            other_charges=0.0,
-            total_amount=tenant.monthly_rent or 0.0,
-            amount_paid=0.0,
-            status=init_status
-        )
-        db.add(invoice)
-        db.commit()
-        db.refresh(invoice)
+        try:
+            invoice = RentInvoice(
+                masjid_id=masjid_id,
+                invoice_no=inv_no,
+                tenant_id=tenant.id,
+                tenant_name=tenant.name,
+                property_name=prop_name,
+                assigned_shop=tenant.assigned_shop or "Unit 01",
+                for_month=month_name,
+                invoice_date=inv_date,
+                due_date=due_date,
+                rent_amount=tenant.monthly_rent or 0.0,
+                late_fee=0.0,
+                other_charges=0.0,
+                total_amount=tenant.monthly_rent or 0.0,
+                amount_paid=0.0,
+                status=init_status
+            )
+            db.add(invoice)
+            db.commit()
+            db.refresh(invoice)
+        except Exception as inv_gen_err:
+            db.rollback()
+            raise inv_gen_err
 
     return invoice
 
@@ -652,8 +705,7 @@ def create_rent_collection(
     masjid_id = get_current_masjid_id(current_user)
     """Record a rent collection payment."""
     if not col_in.receipt_no:
-        count = db.query(RentCollection).filter(RentCollection.masjid_id == masjid_id).count()
-        col_in.receipt_no = f"RCP-2026-{count + 101:03d}"
+        col_in.receipt_no = generate_next_receipt_no(db)
 
     db_col = RentCollection(**col_in.dict(), masjid_id=masjid_id)
     db.add(db_col)
@@ -691,8 +743,7 @@ def confirm_rent_payment(
             raise HTTPException(status_code=400, detail="This invoice has already been fully paid.")
 
     # Generate receipt number
-    count = db.query(RentCollection).filter(RentCollection.masjid_id == masjid_id).count()
-    receipt_no = f"RCPT-{count + 1042:04d}"
+    receipt_no = generate_next_receipt_no(db)
 
     # Create RentCollection record
     db_col = RentCollection(
@@ -771,8 +822,10 @@ def create_hall_booking(
         (HallBooking.masjid_id == masjid_id) | (HallBooking.masjid_id == None)
     ).count()
 
-    booking_no_str = str(count + 1)
-    booking_id_str = hb_in.booking_id or f"HB-{count + 1:03d}"
+    year_suffix = datetime.now().strftime("%y")
+    default_booking_id = f"HLB-{year_suffix}-{count + 1:02d}"
+    booking_id_str = hb_in.booking_id if (hb_in.booking_id and hb_in.booking_id.strip() and not hb_in.booking_id.startswith("HB-")) else default_booking_id
+    booking_no_str = default_booking_id
 
     hall_charge = float(hb_in.hall_charge or 0.0)
     cleaning_charge = float(hb_in.cleaning_charge or 0.0)
@@ -1452,9 +1505,10 @@ def create_asset(
     db: Session = Depends(get_db)
 ):
     masjid_id = get_current_masjid_id(current_user)
-    if not asset_in.asset_code:
+    if not asset_in.asset_code or asset_in.asset_code.startswith("AST-"):
         count = db.query(AssetItem).filter(AssetItem.masjid_id == masjid_id).count()
-        asset_in.asset_code = f"AST-{count + 1:03d}"
+        year_suffix = datetime.now().strftime("%y")
+        asset_in.asset_code = f"ASST-{year_suffix}-{count + 1:02d}"
 
     db_asset = AssetItem(**asset_in.dict(), masjid_id=masjid_id)
     db.add(db_asset)
@@ -1628,9 +1682,10 @@ def create_asset_disposal(
         raise HTTPException(status_code=400, detail="This asset has already been disposed.")
 
     # 2. Auto-generate disposal_no if missing
-    if not disp_in.disposal_no:
+    if not disp_in.disposal_no or disp_in.disposal_no.startswith("DISP-"):
         count = db.query(AssetDisposalRecord).filter(AssetDisposalRecord.masjid_id == masjid_id).count()
-        disp_in.disposal_no = f"DISP-{count + 1:03d}"
+        year_suffix = datetime.now().strftime("%y")
+        disp_in.disposal_no = f"DEP-{year_suffix}-{count + 1:02d}"
 
     # 3. Calculate net_disposal_amount and create disposal record
     disp_data = disp_in.dict()

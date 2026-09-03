@@ -157,7 +157,7 @@ export const AdminLoginPage = () => {
               </form>
 
               <div className="mt-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400"><span className="h-px flex-1 bg-slate-200" /> Protected Admin Access <span className="h-px flex-1 bg-slate-200" /></div>
-              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-xs leading-5 text-slate-600"><div className="flex items-start gap-2.5"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0f766e]" /><span>Your existing admin authentication, API integration and authorization flow remain unchanged.</span></div></div>
+              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-xs leading-5 text-slate-600"><div className="flex items-start gap-2.5"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0f766e]" /><span>Your admin authentication and authorization security remain active.</span></div></div>
             </div>
             <p className="mt-5 text-center text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">Authorized administrators only</p>
           </motion.div>

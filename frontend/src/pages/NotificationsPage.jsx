@@ -139,7 +139,7 @@ export const NotificationsPage = () => {
               { label: 'Live Notifications', value: notificationItems.length, note: 'Activity Feed', icon: Bell, tone: 'emerald' },
               { label: 'Member Requests', value: 'Live', note: 'New today', icon: Users, tone: 'teal' },
               { label: 'Payments', value: 'Online', note: 'Real-time', icon: CheckCircle2, tone: 'cyan' },
-              { label: 'Status', value: 'Live API', note: 'Connected', icon: Building2, tone: 'green' }
+              { label: 'Status', value: 'Active', note: 'Connected', icon: Building2, tone: 'green' }
             ].map((metric, index) => {
               const MetricIcon = metric.icon;
               return (
@@ -185,7 +185,7 @@ export const NotificationsPage = () => {
               {loading ? (
                 <div className="notification-empty-state">
                   <div className="notification-loading-ring"><Loader2 className="h-6 w-6 animate-spin text-emerald-600" /></div>
-                  <p className="text-sm font-bold text-slate-800">Fetching live notifications from PostgreSQL...</p>
+                  <p className="text-sm font-bold text-slate-800">Loading live notifications...</p>
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="notification-empty-state">

@@ -223,7 +223,9 @@ export default function AssetsPage({ activeSubTab }) {
   // Open Add Asset Modal with Auto-generated Asset ID
   const handleOpenAddAssetModal = () => {
     const nextCount = assets.length + 1;
-    const autoCode = `AST-${nextCount < 10 ? '00' : nextCount < 100 ? '0' : ''}${nextCount}`;
+    const yearSuffix = new Date().getFullYear().toString().slice(-2);
+    const seq = nextCount < 10 ? `0${nextCount}` : `${nextCount}`;
+    const autoCode = `ASST-${yearSuffix}-${seq}`;
     setAssetForm(prev => ({
       ...prev,
       asset_code: autoCode
@@ -237,7 +239,9 @@ export default function AssetsPage({ activeSubTab }) {
     const selected = assetObj || activeAssetsList[0];
 
     const nextCount = disposals.length + 1;
-    const dispNo = `DISP-${nextCount < 10 ? '00' : nextCount < 100 ? '0' : ''}${nextCount}`;
+    const yearSuffix = new Date().getFullYear().toString().slice(-2);
+    const seq = nextCount < 10 ? `0${nextCount}` : `${nextCount}`;
+    const dispNo = `DEP-${yearSuffix}-${seq}`;
 
     setDisposalForm({
       disposal_no: dispNo,
@@ -305,7 +309,7 @@ export default function AssetsPage({ activeSubTab }) {
       setShowDisposalModal(false);
     } catch (err) {
       console.error('Failed to dispose asset:', err);
-      alert('Failed to process asset disposal. Please check backend logs.');
+      alert('Failed to process asset disposal. Please try again.');
     } finally {
       setSubmittingDisposal(false);
     }
@@ -358,7 +362,7 @@ export default function AssetsPage({ activeSubTab }) {
               <div>
                 <p className="text-[11px] font-bold text-slate-400">Live Assets</p>
                 <p className="text-2xl font-black text-slate-900 mt-1">{activeAssets.length}</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-1">PostgreSQL</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Active</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-sm shadow-xs">
                 ◈
@@ -393,7 +397,7 @@ export default function AssetsPage({ activeSubTab }) {
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold text-slate-400">Status</p>
-                <p className="text-lg font-black text-slate-900 mt-1">Live API</p>
+                <p className="text-lg font-black text-slate-900 mt-1">Active System</p>
                 <p className="text-[10px] text-slate-400 font-medium mt-1">Connected</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-sm shadow-xs">
@@ -433,7 +437,7 @@ export default function AssetsPage({ activeSubTab }) {
                       return (
                         <tr key={ast.id} className="hover:bg-slate-50/80 transition-colors">
                           <td className="py-4 px-5 font-bold font-mono text-slate-900">
-                            {ast.asset_code || `AST-${ast.id}`}
+                            {ast.asset_code?.startsWith('ASST-') ? ast.asset_code : (ast.asset_code || `ASST-26-${ast.id < 10 ? '0' + ast.id : ast.id}`)}
                           </td>
                           <td className="py-4 px-5 font-bold text-slate-900">{ast.asset_name}</td>
                           <td className="py-4 px-5 font-semibold text-slate-600">{ast.category}</td>
@@ -564,7 +568,7 @@ export default function AssetsPage({ activeSubTab }) {
                       <input
                         type="text"
                         disabled
-                        value={assetForm.asset_code || `AST-${(assets.length + 1) < 10 ? '00' : (assets.length + 1) < 100 ? '0' : ''}${assets.length + 1}`}
+                        value={assetForm.asset_code || `ASST-26-${(assets.length + 1) < 10 ? '0' : ''}${assets.length + 1}`}
                         placeholder="Auto-generated"
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-bold cursor-not-allowed"
                       />

@@ -25,6 +25,8 @@ class SanthaCollection(Base):
     is_arrears = Column(Boolean, default=False)
     advance_months = Column(Integer, default=0)
     advance_period = Column(String, nullable=True)
+    previous_balance = Column(Float, default=0.0)
+    remaining_balance = Column(Float, default=0.0)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 

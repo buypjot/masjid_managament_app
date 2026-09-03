@@ -205,7 +205,7 @@ export default function AssetMaintenancePage() {
       setShowAddModal(false);
     } catch (err) {
       console.error('Failed to save maintenance record:', err);
-      alert('Failed to save maintenance record. Please check backend logs.');
+      alert('Failed to save maintenance record. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -302,7 +302,7 @@ export default function AssetMaintenancePage() {
               <div>
                 <p className="text-[11px] font-bold text-slate-400">Completed</p>
                 <p className="text-2xl font-black text-slate-900 mt-1">{completedCount}</p>
-                <p className="text-[10px] text-slate-400 font-medium mt-1">PostgreSQL</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">Resolved</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-sm shadow-xs">
                 ✓
@@ -313,7 +313,7 @@ export default function AssetMaintenancePage() {
             <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
               <div>
                 <p className="text-[11px] font-bold text-slate-400">Status</p>
-                <p className="text-lg font-black text-slate-900 mt-1">Live API</p>
+                <p className="text-lg font-black text-slate-900 mt-1">Active System</p>
                 <p className="text-[10px] text-slate-400 font-medium mt-1">Active</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-bold text-sm shadow-xs">

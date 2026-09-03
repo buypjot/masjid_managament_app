@@ -85,7 +85,7 @@ def run_auto_migrations():
         ("pin_code", "VARCHAR(20) DEFAULT '627811'"),
         ("landmark", "VARCHAR(150)"),
         ("monthly_santha", "DOUBLE PRECISION DEFAULT 500.0"),
-        ("santha_due_day", "INTEGER DEFAULT 20"),
+        ("santha_due_day", "INTEGER DEFAULT 10"),
         ("collected_amount", "FLOAT DEFAULT 0.0"),
     ]
 
@@ -152,6 +152,8 @@ def run_auto_migrations():
                 ("reference_id", "VARCHAR(150)"),
                 ("advance_months", "INTEGER DEFAULT 0"),
                 ("advance_period", "VARCHAR(150)"),
+                ("previous_balance", "DOUBLE PRECISION DEFAULT 0.0"),
+                ("remaining_balance", "DOUBLE PRECISION DEFAULT 0.0"),
             ]
             for col_name, col_type in santha_cols:
                 stmt = text(f"ALTER TABLE santha_collections ADD COLUMN IF NOT EXISTS {col_name} {col_type};")

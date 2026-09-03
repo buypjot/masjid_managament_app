@@ -103,7 +103,7 @@ export const ModernMasjidDashboard = () => {
             <button onClick={() => setShowSearch(true)} className="rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-600"><Search className="h-4 w-4" /></button>
             <div className="relative">
               <button onClick={() => setShowNotifications((v) => !v)} className="relative rounded-xl border border-slate-200 bg-white p-2.5 text-slate-500 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-200 hover:text-indigo-600"><Bell className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-rose-500 ring-2 ring-white" /></button>
-              {showNotifications && <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10"><div className="mb-3 flex items-center justify-between"><div><div className="text-xs font-black uppercase tracking-wider text-slate-950">System alerts</div><div className="text-[10px] text-slate-400">Latest workspace activity</div></div><button onClick={() => setShowNotifications(false)}><X className="h-4 w-4 text-slate-400" /></button></div><div className="space-y-2"><div className="rounded-xl border border-amber-100 bg-amber-50 p-3"><div className="text-xs font-bold text-amber-900">Pending Santha</div><div className="mt-1 text-[11px] text-amber-700">Review current family dues from Collections.</div></div><div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3"><div className="text-xs font-bold text-emerald-900">Live data connected</div><div className="mt-1 text-[11px] text-emerald-700">Dashboard metrics are loaded from your existing API.</div></div></div></div>}
+              {showNotifications && <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl shadow-slate-900/10"><div className="mb-3 flex items-center justify-between"><div><div className="text-xs font-black uppercase tracking-wider text-slate-950">System alerts</div><div className="text-[10px] text-slate-400">Latest workspace activity</div></div><button onClick={() => setShowNotifications(false)}><X className="h-4 w-4 text-slate-400" /></button></div><div className="space-y-2"><div className="rounded-xl border border-amber-100 bg-amber-50 p-3"><div className="text-xs font-bold text-amber-900">Pending Santha</div><div className="mt-1 text-[11px] text-amber-700">Review current family dues from Collections.</div></div><div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3"><div className="text-xs font-bold text-emerald-900">System connected</div><div className="mt-1 text-[11px] text-emerald-700">Dashboard metrics are up to date.</div></div></div></div>}
             </div>
             <div className="relative">
               <button onClick={() => setShowUserMenu((v) => !v)} className="flex items-center gap-2 rounded-xl border border-transparent px-2 py-1.5 transition hover:border-slate-200 hover:bg-white"><div className="hidden text-right sm:block"><div className="text-xs font-black text-slate-950">{userName}</div><div className="text-[10px] font-medium text-slate-400">{userRole}</div></div><Avatar src={userInfo?.profile_photo} name={userName} size="sm" showStatusDot status="online" /><ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 sm:block" /></button>
@@ -124,13 +124,101 @@ export const ModernMasjidDashboard = () => {
           <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-end"><div><div className="mds-hero-secure mb-3"><ShieldCheck className="h-3.5 w-3.5" />Secure Workspace</div><h1 className="flex items-center gap-3 text-3xl font-black tracking-tight sm:text-4xl">Secure Workspace<ShieldCheck className="h-7 w-7 text-white/85 sm:h-8 sm:w-8" /></h1><p className="mt-2 max-w-xl text-sm leading-6 text-indigo-100/80">Manage your masjid community, collections, and operations with confidence in a secure and organized workspace.</p></div><div className="flex items-center gap-3"><div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur"><div className="text-xs font-extrabold uppercase tracking-wider text-indigo-200">Today</div><div className="mt-1 flex items-center gap-2 text-xs sm:text-sm font-bold"><CalendarDays className="h-4 w-4 text-cyan-300" />{currentDate}</div></div><button onClick={() => setShowCollect(true)} className="inline-flex items-center gap-2 rounded-2xl bg-white px-5 py-3.5 text-xs sm:text-sm font-black text-slate-950 shadow-xl transition hover:-translate-y-1 hover:shadow-2xl"><Plus className="h-4 w-4" />Collect Santha</button></div></div>
         </motion.section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {[
-            { label: 'Families & Members', value: `${metrics.families}`, secondary: `${metrics.members} members`, icon: Users, accent: 'indigo', caption: 'Registered community' },
+            { 
+              label: 'Families & Members', 
+              value: `${metrics.families}`, 
+              isDual: true,
+              secondary: 'Registered headcount', 
+              icon: Users, 
+              accent: 'indigo', 
+              caption: 'Registered community' 
+            },
             { label: 'Total Collections', value: formatCurrency(metrics.santhaCollected), secondary: 'Santha + Juma + donations', icon: IndianRupee, accent: 'emerald', caption: 'Collected value' },
             { label: 'Pending Santha', value: formatCurrency(metrics.pendingSantha), secondary: 'Live family dues', icon: Hourglass, accent: 'amber', caption: 'Needs attention' },
             { label: 'Available Balance', value: formatCurrency(metrics.availableBalance), secondary: 'Cash + bank', icon: Layers3, accent: 'cyan', caption: 'Current balance' },
-          ].map((card, index) => { const Icon = card.icon; return <motion.div key={card.label} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }} className={`mds-stat-card mds-stat-card--${card.accent} group relative overflow-hidden rounded-[22px] border p-5 shadow-lg transition duration-300`} style={{ borderRadius: 22, clipPath: "none", WebkitClipPath: "none" }}><div className="flex items-start justify-between"><div><div className="text-xs font-extrabold uppercase tracking-[0.12em] text-slate-500">{card.label}</div>{loading ? <div className="mt-3 h-9 w-28 animate-pulse rounded-lg bg-slate-100" /> : <motion.div initial={{ opacity: 0, y: 6, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ delay: index * 0.06 + 0.18, duration: 0.35 }} className="mds-stat-value mt-2 text-2xl font-black tracking-tight sm:text-3xl">{card.value}</motion.div>}<div className="mt-1 text-xs font-semibold text-slate-500">{card.secondary}</div></div><motion.div whileHover={{ rotate: 8, scale: 1.08 }} transition={{ type: 'spring', stiffness: 300, damping: 15 }} className="mds-stat-icon shrink-0 rounded-2xl p-3"><Icon className="h-6 w-6" /></motion.div></div><div className="mt-4 flex items-center gap-2 text-xs font-bold text-slate-500"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{card.caption}</div></motion.div>; })}
+          ].map((card, index) => {
+            const Icon = card.icon;
+            return (
+              <motion.div
+                key={card.label}
+                initial={{ opacity: 0, y: 22, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                whileHover={{ y: -6, scale: 1.025 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 260,
+                  damping: 20,
+                  delay: index * 0.07,
+                }}
+                className={`mds-stat-card mds-stat-card--${card.accent} group relative overflow-hidden rounded-[24px] border p-6 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col items-center justify-center text-center min-h-[175px]`}
+                style={{ borderRadius: 24, clipPath: 'none', WebkitClipPath: 'none' }}
+              >
+                {/* Subtle Ambient Top-to-Bottom Gradient */}
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/70 via-transparent to-white/40" />
+
+                {/* Centered Content Container */}
+                <div className="relative z-10 flex flex-col items-center justify-center text-center w-full my-auto">
+                  {/* Centered Icon Badge with Micro Rotation */}
+                  <motion.div
+                    whileHover={{ scale: 1.15, rotate: 6 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                    className="mds-stat-icon mb-3 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl p-3 shadow-md transition-transform"
+                  >
+                    <Icon className="h-6 w-6" />
+                  </motion.div>
+
+                  {/* Centered Upper Title Label */}
+                  <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500 sm:text-xs">
+                    {card.label}
+                  </div>
+
+                  {/* Centered Metric Value Display */}
+                  {loading ? (
+                    <div className="my-2 h-9 w-28 animate-pulse rounded-lg bg-slate-200/60" />
+                  ) : card.isDual ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.94 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.07 + 0.14, duration: 0.3 }}
+                      className="my-1.5 flex items-center justify-center gap-2 flex-wrap"
+                    >
+                      <div className="flex items-baseline gap-1 text-3xl sm:text-4xl font-black text-slate-900">
+                        <span>{metrics.families}</span>
+                        <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Families</span>
+                      </div>
+                      <span className="text-slate-300 font-bold text-lg">•</span>
+                      <div className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600/10 px-3 py-1 text-indigo-700 border border-indigo-500/25 shadow-xs">
+                        <span className="text-2xl sm:text-3xl font-black text-indigo-700">{metrics.members}</span>
+                        <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">Members</span>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.94 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.07 + 0.14, duration: 0.3 }}
+                      className="mds-stat-value my-1 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl"
+                    >
+                      {card.value}
+                    </motion.div>
+                  )}
+
+                  {/* Centered Secondary Detail */}
+                  <div className="text-xs font-semibold text-slate-600">
+                    {card.secondary}
+                  </div>
+
+                  {/* Centered Status Indicator Badge */}
+                  <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-slate-900/5 px-3 py-1 text-[11px] font-extrabold text-slate-700 shadow-xs border border-slate-950/5 backdrop-blur-xs">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>{card.caption}</span>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </section>
 
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.55fr_1fr]">

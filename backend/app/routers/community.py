@@ -6,6 +6,7 @@ from app.database import get_db
 from app.utils.security import get_current_user, get_current_masjid_id
 from app.models.community import Family, FamilyMember, FamilyHeadChange, MemberRequest, CommunityFunction
 from app.models.collections import SanthaCollection, JumaCollection, Donation
+from app.routers.collections import calculate_family_santha_arrears
 from app.schemas.community import (
     FamilyCreate,
     FamilyResponse,
@@ -19,9 +20,66 @@ from app.schemas.community import (
 )
 
 import json
+import re
 from datetime import datetime
 
 router = APIRouter(prefix="/api/community", tags=["Community Management"])
+
+def generate_next_family_code(db: Session, masjid_id: int) -> str:
+    """
+    Generate the next Family Head ID in format 'MM N-1'
+    where N is guaranteed to be globally unique across all families in PostgreSQL.
+    """
+    all_families = db.query(Family).all()
+    max_head_num = 0
+    for f in all_families:
+        if f.family_code:
+            match = re.search(r'MM\s*(\d+)', f.family_code, re.IGNORECASE)
+            if match:
+                num = int(match.group(1))
+                if num > max_head_num:
+                    max_head_num = num
+
+    candidate_num = max_head_num + 1 if max_head_num > 0 else (len(all_families) + 1)
+    
+    while True:
+        candidate_code = f"MM {candidate_num}-1"
+        existing = db.query(Family).filter(Family.family_code == candidate_code).first()
+        if not existing:
+            return candidate_code
+        candidate_num += 1
+
+
+def generate_next_member_code(db: Session, masjid_id: int, family: Family) -> str:
+    """
+    Generate next member ID under family.
+    Format: 'MM N-P' where N is Head index, P is position within that family (starting from 1 for Head, 2 for first member, etc.)
+    """
+    match = re.search(r'MM\s*(\d+)', family.family_code or '', re.IGNORECASE)
+    if match:
+        head_num = match.group(1)
+    else:
+        head_num = str(family.id)
+
+    existing_members = db.query(FamilyMember).filter(
+        FamilyMember.family_id == family.id,
+        FamilyMember.masjid_id == masjid_id
+    ).all()
+
+    max_p = 0
+    for m in existing_members:
+        if m.member_code:
+            p_match = re.search(r'MM\s*\d+-(\d+)', m.member_code, re.IGNORECASE)
+            if p_match:
+                p_val = int(p_match.group(1))
+                if p_val > max_p:
+                    max_p = p_val
+
+    if max_p == 0:
+        max_p = len(existing_members)
+
+    next_pos = max_p + 1
+    return f"MM {head_num}-{next_pos}"
 
 def build_family_snapshot(f: Family) -> str:
     if not f:
@@ -51,6 +109,7 @@ async def get_families(
     search: Optional[str] = Query(None),
     area: Optional[str] = Query(None),
     status_filter: Optional[str] = Query(None),
+    as_of_date: Optional[str] = Query(None),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -190,8 +249,18 @@ async def get_families(
 
     all_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     family_list = []
+    today = datetime.now()
     for f in families:
-        ledger = compute_family_statement_ledger(f, all_cols)
+        ledger = compute_family_statement_ledger(f, all_cols, as_of_date=as_of_date)
+        due_day_val = f.santha_due_day or 10
+        if today.day <= due_day_val:
+            next_due = datetime(today.year, today.month, due_day_val)
+        else:
+            nm = today.month + 1 if today.month < 12 else 1
+            ny = today.year if today.month < 12 else today.year + 1
+            next_due = datetime(ny, nm, due_day_val)
+        next_due_str = next_due.strftime("%d %b %Y")
+
         family_list.append({
             "id": f.id,
             "family_code": f.family_code,
@@ -202,7 +271,7 @@ async def get_families(
             "gender": f.gender or "Male",
             "dob": f.dob or "",
             "mobile_number": f.mobile_number or "",
-            "joining_date": f.joining_date or "",
+            "joining_date": f.joining_date or ledger["joining_date"],
             "relationship_type": f.relationship_type or "Family Head",
             "aadhar_ref": f.aadhar_ref or "",
             "house_no": f.house_no or "",
@@ -212,14 +281,18 @@ async def get_families(
             "pin_code": f.pin_code or "",
             "landmark": f.landmark or "",
             "member_count": f.member_count,
-            "monthly_santha": f.monthly_santha,
-            "santha_due_day": f.santha_due_day or 20,
-            "due_date_formatted": f"{f.santha_due_day or 20}th of every month",
-            "next_collection_date": f"{(f.santha_due_day or 20):02d} {'Aug 2026' if ledger['pending_amount'] > 0 else 'Sep 2026'}",
+            "monthly_santha": f.monthly_santha or 200.0,
+            "santha_due_day": due_day_val,
+            "due_day": due_day_val,
+            "due_date_formatted": f"{due_day_val}th of every month",
+            "total_santha_due": ledger["total_santha_due"],
+            "total_paid": ledger["total_paid"],
+            "outstanding_amount": ledger["outstanding_amount"],
             "pending_amount": ledger["pending_amount"],
             "current_month_due": ledger["current_month_due"],
             "previous_arrears": ledger["previous_arrears"],
-            "total_paid": ledger["total_paid"],
+            "payment_status": ledger["payment_status"],
+            "next_due_date": next_due_str,
             "collected_amount": ledger["total_paid"],
             "has_collection": ledger["total_paid"] > 0,
             "is_poor_family": f.is_poor_family,
@@ -278,12 +351,15 @@ async def create_family(
             status_code=400,
             detail=f"A family record for '{family_title}' with head '{full_head_name}' already exists in PostgreSQL."
         )
-    # Collision-safe tenant-prefixed family code generation
+    # Auto-generation of MM N-1 Family Head code with uniqueness verification
     if payload.family_code:
-        generated_code = payload.family_code
+        existing_with_code = db.query(Family).filter(Family.family_code == payload.family_code).first()
+        if existing_with_code:
+            generated_code = generate_next_family_code(db, masjid_id)
+        else:
+            generated_code = payload.family_code
     else:
-        max_id = db.execute(text("SELECT COALESCE(MAX(id), 0) + 1 FROM families")).scalar() or 1
-        generated_code = f"F-M{masjid_id}-{max_id:04d}"
+        generated_code = generate_next_family_code(db, masjid_id)
 
     try:
         new_family = Family(
@@ -307,7 +383,7 @@ async def create_family(
             landmark=payload.landmark or "",
             member_count=payload.member_count or 1,
             monthly_santha=payload.monthly_santha if payload.monthly_santha is not None else 500.0,
-            santha_due_day=payload.santha_due_day or 20,
+            santha_due_day=payload.santha_due_day or 10,
             pending_amount=payload.pending_amount or 0.0,
             collected_amount=payload.collected_amount or 0.0,
             is_poor_family=payload.is_poor_family or False,
@@ -318,9 +394,8 @@ async def create_family(
         db.commit()
         db.refresh(new_family)
 
-        # Collision-safe member code generation
-        clean_code = new_family.family_code.replace("F-", "")
-        generated_member_code = f"M-{clean_code}-1"
+        # Initial head member code matches family code (e.g. MM 1-1, MM 2-1)
+        generated_member_code = generated_code
 
         # Automatically add initial head member to FamilyMember table
         first_member = FamilyMember(
@@ -361,7 +436,85 @@ async def create_family(
         db.add(head_log)
         db.commit()
 
-        return new_family
+        paid_val = float(getattr(payload, 'previous_paid', 0.0) or getattr(payload, 'initial_paid', 0.0) or 0.0)
+        if paid_val > 0:
+            count = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).count()
+            year_suffix = datetime.now().strftime("%y")
+            date_str = datetime.now().strftime("%Y%m%d")
+            rcp_code = f"SANT-{year_suffix}-{count + 1:02d}"
+            ref_id = f"TXN-{date_str}-{count + 1:02d}"
+
+            init_collection = SanthaCollection(
+                masjid_id=masjid_id,
+                receipt_no=rcp_code,
+                family_id=new_family.id,
+                family_code=new_family.family_code,
+                head_name=full_head_name,
+                family_name=new_family.family_name,
+                amount=paid_val,
+                previous_balance=0.0,
+                remaining_balance=0.0,
+                month="Initial Registration",
+                year=datetime.now().year,
+                payment_date=payload.joining_date or datetime.now().strftime("%Y-%m-%d"),
+                payment_method="Cash",
+                financial_account="Main Cash",
+                reference_id=ref_id,
+                notes="Initial / Previous Santha Paid at Family Registration"
+            )
+            db.add(init_collection)
+            db.commit()
+
+        all_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
+        ledger = compute_family_statement_ledger(new_family, all_cols)
+        due_day_val = new_family.santha_due_day or 10
+        today = datetime.now()
+        if today.day <= due_day_val:
+            next_due = datetime(today.year, today.month, due_day_val)
+        else:
+            nm = today.month + 1 if today.month < 12 else 1
+            ny = today.year if today.month < 12 else today.year + 1
+            next_due = datetime(ny, nm, due_day_val)
+        next_due_str = next_due.strftime("%d %b %Y")
+
+        return {
+            "id": new_family.id,
+            "family_code": new_family.family_code,
+            "family_name": new_family.family_name,
+            "head_name": new_family.head_name,
+            "first_name": new_family.first_name or "",
+            "last_name": new_family.last_name or "",
+            "gender": new_family.gender or "Male",
+            "dob": new_family.dob or "",
+            "mobile_number": new_family.mobile_number or "",
+            "joining_date": new_family.joining_date or ledger["joining_date"],
+            "relationship_type": new_family.relationship_type or "Family Head",
+            "aadhar_ref": new_family.aadhar_ref or "",
+            "house_no": new_family.house_no or "",
+            "street": new_family.street or "",
+            "area": new_family.area or "",
+            "city": new_family.city or "",
+            "pin_code": new_family.pin_code or "",
+            "landmark": new_family.landmark or "",
+            "member_count": new_family.member_count,
+            "monthly_santha": new_family.monthly_santha or 200.0,
+            "santha_due_day": due_day_val,
+            "due_day": due_day_val,
+            "due_date_formatted": f"{due_day_val}th of every month",
+            "total_santha_due": ledger["total_santha_due"],
+            "total_paid": ledger["total_paid"],
+            "outstanding_amount": ledger["outstanding_amount"],
+            "pending_amount": ledger["pending_amount"],
+            "current_month_due": ledger["current_month_due"],
+            "previous_arrears": ledger["previous_arrears"],
+            "payment_status": ledger["payment_status"],
+            "next_due_date": next_due_str,
+            "collected_amount": ledger["total_paid"],
+            "has_collection": ledger["total_paid"] > 0,
+            "is_poor_family": new_family.is_poor_family,
+            "status": new_family.status,
+            "created_at": new_family.created_at
+        }
     except Exception as e:
         db.rollback()
         raise HTTPException(
@@ -400,12 +553,10 @@ async def get_next_member_code(
     if family_id:
         family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
         if family:
-            existing_count = db.query(FamilyMember).filter(FamilyMember.family_id == family_id, FamilyMember.masjid_id == masjid_id).count()
-            clean_code = family.family_code.replace("F-", "")
-            next_code = f"M-{clean_code}-{existing_count + 1}"
+            next_code = generate_next_member_code(db, masjid_id, family)
             return {"next_code": next_code}
-    total_count = db.query(FamilyMember).filter(FamilyMember.masjid_id == masjid_id).count() + 1
-    return {"next_code": f"M-{total_count:04d}"}
+    next_head_code = generate_next_family_code(db, masjid_id)
+    return {"next_code": next_head_code}
 
 @router.get("/members/{member_id}")
 async def get_member_detail(
@@ -439,9 +590,7 @@ async def add_family_member(
     if payload.member_code:
         generated_member_code = payload.member_code
     else:
-        existing_count = db.query(FamilyMember).filter(FamilyMember.family_id == payload.family_id).count()
-        clean_code = family.family_code.replace("F-", "")
-        generated_member_code = f"M-{clean_code}-{existing_count + 1}"
+        generated_member_code = generate_next_member_code(db, masjid_id, family)
 
     new_member = FamilyMember(
         masjid_id=masjid_id,
@@ -452,7 +601,7 @@ async def add_family_member(
         dob=payload.dob,
         mobile_number=payload.mobile_number,
         marital_status=payload.marital_status or "Single",
-        relationship_type=payload.relationship_type or "Family Head",
+        relationship_type=payload.relationship_type or "Son",
         status=payload.status or "Active",
         occupation=payload.occupation,
         education=payload.education,
@@ -579,6 +728,26 @@ async def update_family_member(
 
 
 
+def cleanup_family_foreign_keys(db: Session, family_id: int):
+    """
+    Safely disassociate or delete foreign key references pointing to family_id before deleting a Family record.
+    Preserves historical monetary collection records by setting family_id to NULL.
+    """
+    db.query(SanthaCollection).filter(SanthaCollection.family_id == family_id).update({"family_id": None}, synchronize_session=False)
+    db.query(JumaCollection).filter(JumaCollection.family_id == family_id).update({"family_id": None}, synchronize_session=False)
+    db.query(Donation).filter(Donation.family_id == family_id).update({"family_id": None}, synchronize_session=False)
+    db.query(CommunityFunction).filter(CommunityFunction.family_id == family_id).update({"family_id": None}, synchronize_session=False)
+
+    try:
+        from app.models.properties import TenancyAgreement
+        db.query(TenancyAgreement).filter(TenancyAgreement.family_id == family_id).update({"family_id": None}, synchronize_session=False)
+    except Exception:
+        pass
+
+    db.query(FamilyMember).filter(FamilyMember.family_id == family_id).delete(synchronize_session=False)
+    db.query(FamilyHeadChange).filter(FamilyHeadChange.family_id == family_id).delete(synchronize_session=False)
+
+
 @router.delete("/members/{member_id}")
 async def delete_family_member(
     member_id: int,
@@ -591,12 +760,68 @@ async def delete_family_member(
         raise HTTPException(status_code=404, detail="Member not found")
     
     fam = db.query(Family).filter(Family.id == member.family_id).first()
-    if fam and fam.member_count > 0:
-        fam.member_count -= 1
-        
+    is_head_member = member.is_head or (fam and (fam.head_name == member.full_name or member.relationship_type == "Family Head"))
+
     db.delete(member)
+    
+    if fam:
+        # Check remaining members for this family
+        remaining_members = db.query(FamilyMember).filter(
+            FamilyMember.family_id == fam.id,
+            FamilyMember.id != member_id
+        ).order_by(FamilyMember.id.asc()).all()
+
+        fam.member_count = len(remaining_members)
+
+        if is_head_member:
+            if remaining_members:
+                # Promote the next available member to Family Head
+                new_head = remaining_members[0]
+                old_head_name = fam.head_name
+                new_head.is_head = True
+                new_head.relationship_type = "Family Head"
+                fam.head_name = new_head.full_name
+                
+                # Log head succession
+                head_log = FamilyHeadChange(
+                    masjid_id=masjid_id,
+                    family_id=fam.id,
+                    family_name=fam.family_name,
+                    old_head=old_head_name,
+                    new_head=new_head.full_name,
+                    reason=f"Head Deleted — Auto Succession to {new_head.full_name}",
+                    old_details=json.dumps({"head_name": old_head_name}),
+                    new_details=json.dumps({"head_name": new_head.full_name, "promoted_member_id": new_head.id}),
+                    changed_by="Admin User",
+                    changed_at=datetime.utcnow()
+                )
+                db.add(head_log)
+            else:
+                # No members left in the family -> Delete the family record automatically
+                cleanup_family_foreign_keys(db, fam.id)
+                db.delete(fam)
+
     db.commit()
     return {"message": "Member deleted successfully"}
+
+
+@router.delete("/families/{family_id}")
+async def delete_community_family(
+    family_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
+    fam = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
+    if not fam:
+        raise HTTPException(status_code=404, detail="Family record not found")
+    
+    # Safely disassociate FK references in collections & properties, and remove members/logs
+    cleanup_family_foreign_keys(db, fam.id)
+    
+    db.delete(fam)
+    db.commit()
+    return {"message": f"Family '{fam.family_name}' and all associated members deleted successfully"}
 
 
 @router.get("/head-changes")
@@ -637,6 +862,20 @@ async def get_head_changes(
         db.commit()
         changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.masjid_id == masjid_id).order_by(FamilyHeadChange.id.desc()).all()
 
+    unique_changes = []
+    seen_ids = set()
+    seen_sigs = set()
+    for c in changes:
+        if c.id in seen_ids:
+            continue
+        date_str = c.changed_at.strftime("%Y-%m-%d %H:%M") if c.changed_at else ""
+        sig = f"{c.family_id}_{c.reason}_{c.old_head}_{c.new_head}_{date_str}"
+        if sig in seen_sigs:
+            continue
+        seen_ids.add(c.id)
+        seen_sigs.add(sig)
+        unique_changes.append(c)
+
     return [
         {
             "id": c.id,
@@ -650,7 +889,7 @@ async def get_head_changes(
             "changed_by": c.changed_by or "Admin User",
             "created_at": c.changed_at
         }
-        for c in changes
+        for c in unique_changes
     ]
 
 @router.post("/head-changes")
@@ -841,78 +1080,27 @@ async def get_member_requests(
         ]
     return requests
 
-def compute_family_statement_ledger(family, collections, current_year=2026, current_month=8):
+def compute_family_statement_ledger(family, collections, as_of_date=None):
     """
-    Calculate Santha dues strictly starting from the family's Joining Date.
-    Never charge or include months before the family joined.
+    Calculate Santha dues strictly starting from the family's Joining Date up to as_of_date.
     """
-    joining_date_str = family.joining_date
-    joining_year = current_year
-    joining_month = current_month
-
-    if joining_date_str:
-        if len(joining_date_str) >= 7 and joining_date_str[:4].isdigit():
-            try:
-                joining_year = int(joining_date_str[:4])
-                joining_month = int(joining_date_str[5:7])
-            except ValueError:
-                pass
-        else:
-            month_names = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"]
-            parts = joining_date_str.lower().replace(",", "").split()
-            for p in parts:
-                for idx, m_name in enumerate(month_names, 1):
-                    if m_name.startswith(p) and len(p) >= 3:
-                        joining_month = idx
-                        break
-            for p in parts:
-                if p.isdigit() and len(p) == 4:
-                    joining_year = int(p)
-                    break
-    elif family.created_at:
-        joining_year = family.created_at.year
-        joining_month = family.created_at.month
-
-    years_diff = current_year - joining_year
-    applicable_months = (years_diff * 12) + (current_month - joining_month + 1)
-    if applicable_months < 1:
-        applicable_months = 1
-
-    monthly_rate = family.monthly_santha or 500.0
-    required_since_joining = applicable_months * monthly_rate
-
-    fam_cols = [c for c in collections if c.family_id == family.id]
-    total_paid = sum(c.amount for c in fam_cols)
-
-    month_name_curr = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][current_month - 1]
-    current_month_paid = sum(c.amount for c in fam_cols if c.month == month_name_curr and c.year == current_year)
-    previous_months_paid = max(0.0, total_paid - current_month_paid)
-
-    previous_applicable_months = max(0, applicable_months - 1)
-    previous_required_amount = previous_applicable_months * monthly_rate
-
-    previous_arrears = max(0.0, previous_required_amount - previous_months_paid)
-    current_month_due = max(0.0, monthly_rate - current_month_paid)
-
-    total_unpaid = max(0.0, required_since_joining - total_paid)
-
-    if total_unpaid <= 0:
-        payment_status = "Paid in Full"
-    elif total_paid > 0:
-        payment_status = "Partial Dues Pending"
-    else:
-        payment_status = "Overdue / Arrears"
-
+    calc = calculate_family_santha_arrears(family, collections, as_of_date=as_of_date)
     return {
-        "joining_date": joining_date_str or (family.created_at.strftime("%Y-%m-%d") if family.created_at else "—"),
-        "monthly_santha": monthly_rate,
-        "applicable_months": applicable_months,
-        "required_since_joining": required_since_joining,
-        "total_paid": total_paid,
-        "current_month_due": current_month_due,
-        "previous_arrears": previous_arrears,
-        "pending_amount": total_unpaid,
-        "payment_status": payment_status
+        "joining_date": calc["joining_date"],
+        "monthly_santha": calc["monthly_santha"],
+        "due_day": calc["due_day"],
+        "applicable_months": calc["applicable_months"],
+        "due_months_count": calc["due_months_count"],
+        "required_since_joining": calc["required_santha"],
+        "required_santha": calc["required_santha"],
+        "total_santha_due": calc["required_santha"],
+        "total_paid": calc["total_paid"],
+        "current_month_due": calc["monthly_santha"] if calc["pending_arrears"] > 0 else 0.0,
+        "previous_arrears": max(0.0, calc["pending_arrears"] - calc["monthly_santha"]),
+        "pending_amount": calc["pending_arrears"],
+        "outstanding_amount": calc["pending_arrears"],
+        "payment_status": calc["payment_status"],
+        "month_breakdown": calc["month_breakdown"]
     }
 
 
@@ -1160,7 +1348,20 @@ async def get_family_activity_detail(
     members = db.query(FamilyMember).filter(FamilyMember.family_id == family_id).order_by(FamilyMember.id.asc()).all()
 
     # 2. Head Succession Changes
-    head_changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.family_id == family_id).order_by(FamilyHeadChange.id.desc()).all()
+    raw_head_changes = db.query(FamilyHeadChange).filter(FamilyHeadChange.family_id == family_id).order_by(FamilyHeadChange.id.desc()).all()
+    head_changes = []
+    seen_hc_ids = set()
+    seen_hc_sigs = set()
+    for hc in raw_head_changes:
+        if hc.id in seen_hc_ids:
+            continue
+        date_str = hc.changed_at.strftime("%Y-%m-%d %H:%M") if hc.changed_at else ""
+        sig = f"{hc.family_id}_{hc.reason}_{hc.old_head}_{hc.new_head}_{date_str}"
+        if sig in seen_hc_sigs:
+            continue
+        seen_hc_ids.add(hc.id)
+        seen_hc_sigs.add(sig)
+        head_changes.append(hc)
 
     # 3. Actual Santha Collections (only actual payments made)
     collections = db.query(SanthaCollection).filter(

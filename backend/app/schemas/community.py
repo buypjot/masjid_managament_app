@@ -25,7 +25,9 @@ class FamilyCreate(BaseModel):
 
     member_count: Optional[int] = 1
     monthly_santha: Optional[float] = 500.0
-    santha_due_day: Optional[int] = 20
+    santha_due_day: Optional[int] = 10
+    previous_paid: Optional[float] = 0.0
+    initial_paid: Optional[float] = 0.0
     pending_amount: Optional[float] = 0.0
     collected_amount: Optional[float] = 0.0
     is_poor_family: Optional[bool] = False
@@ -37,10 +39,11 @@ class FamilyResponse(BaseModel):
     family_code: str
     family_name: str
     head_name: str
+    joining_date: Optional[str] = None
     member_count: int
     area: str
     monthly_santha: float
-    santha_due_day: Optional[int] = 20
+    santha_due_day: Optional[int] = 10
     pending_amount: float
     collected_amount: Optional[float] = 0.0
     is_poor_family: bool
@@ -59,7 +62,7 @@ class FamilyMemberCreate(BaseModel):
     dob: Optional[str] = None
     mobile_number: Optional[str] = None
     marital_status: Optional[str] = "Single"
-    relationship_type: Optional[str] = "Family Head"
+    relationship_type: Optional[str] = "Son"
     status: Optional[str] = "Active"
     occupation: Optional[str] = None
     education: Optional[str] = None

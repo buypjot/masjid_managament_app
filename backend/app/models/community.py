@@ -31,7 +31,7 @@ class Family(Base):
 
     member_count = Column(Integer, default=1)
     monthly_santha = Column(Float, default=500.0)
-    santha_due_day = Column(Integer, default=20)
+    santha_due_day = Column(Integer, default=10)
     pending_amount = Column(Float, default=0.0)
     collected_amount = Column(Float, default=0.0)
     is_poor_family = Column(Boolean, default=False)

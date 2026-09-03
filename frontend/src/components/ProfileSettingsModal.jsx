@@ -129,7 +129,7 @@ export const ProfileSettingsModal = ({ isOpen, onClose, onSaveSuccess }) => {
     } catch (err) {
       console.error('Error updating profile:', err);
       if (err.response?.status === 401) {
-        setError('Your session token has expired after backend restart. Please re-login to update your profile.');
+        setError('Your session has expired. Please log in again to update your profile.');
       } else {
         const detail = err.response?.data?.detail;
         setError(typeof detail === 'string' ? detail : 'Failed to save profile changes. Please try again.');

@@ -62,7 +62,7 @@ export const RentCollectionDetailView = ({ onBack, preselectedTenantId = null, o
         }
       } catch (err) {
         console.error('Error fetching tenants:', err);
-        setError('Failed to load tenants from database.');
+        setError('Failed to load tenants.');
         setLoading(false);
       }
     };
@@ -179,7 +179,7 @@ export const RentCollectionDetailView = ({ onBack, preselectedTenantId = null, o
         </div>
         <h3 className="text-lg font-black text-slate-900">No Tenants Found</h3>
         <p className="text-xs text-slate-500 font-medium leading-relaxed">
-          There are currently no active tenant records in your database. Please add a tenant to start collecting rent.
+          There are currently no active tenant records. Please add a tenant to start collecting rent.
         </p>
         <button
           onClick={onBack}
@@ -205,7 +205,7 @@ export const RentCollectionDetailView = ({ onBack, preselectedTenantId = null, o
         tag: '(Paid)',
         tagColor: 'text-emerald-700 font-bold',
         calloutType: 'paid',
-        calloutText: 'This invoice has been fully collected and recorded in the database.'
+        calloutText: 'This invoice has been fully collected and recorded.'
       };
     }
 
@@ -742,7 +742,7 @@ export const RentCollectionDetailView = ({ onBack, preselectedTenantId = null, o
           <div>
             <h3 className="text-base font-black text-slate-950">Rent Payment History</h3>
             <p className="text-xs text-slate-500 font-medium">
-              Real recorded rent payments and pending invoice entries from backend database
+              Real recorded rent payments and pending invoice entries
             </p>
           </div>
         </div>

@@ -22,8 +22,8 @@
 .mds-reference-dashboard main>section:nth-of-type(2)>div:hover{transform:translateY(-5px)!important;box-shadow:0 20px 38px rgba(18,73,55,.13)!important;border-color:#c6e1d5!important}
 .mds-reference-dashboard main>section:nth-of-type(2)>div::before{content:"";position:absolute;left:0;top:0;width:52px;height:3px;border-radius:0 0 8px 0}
 .mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(1)::before{background:#087f5b}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(2)::before{background:#11a99b}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(3)::before{background:#e4a32b}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(4)::before{background:#39b8c5}
-.mds-reference-dashboard main>section:nth-of-type(2) .text-slate-500{color:#70847c!important;font-size:.72rem!important}
-.mds-reference-dashboard main>section:nth-of-type(2) .text-slate-950{color:#10251e!important;font-weight:900!important}
+.mds-reference-dashboard main>section:nth-of-type(2) .text-slate-500{color:#475569!important;font-size:.72rem!important}
+.mds-reference-dashboard main>section:nth-of-type(2) .text-slate-950{color:#0f172a!important;font-weight:900!important}
 /* Only the metric icon is circular. The metric card itself stays rectangular. */
 .mds-reference-dashboard main>section:nth-of-type(2)>div>div:first-child>div:last-child.rounded-2xl{border-radius:50%!important;padding:.72rem!important}
 .mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(1) .rounded-2xl{background:#eaf7f0!important;color:#087f5b!important}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(2) .rounded-2xl{background:#e5f8f6!important;color:#0b9d91!important}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(3) .rounded-2xl{background:#fff6df!important;color:#ad7618!important}.mds-reference-dashboard main>section:nth-of-type(2)>div:nth-child(4) .rounded-2xl{background:#e9f9fb!important;color:#0a98a8!important}

@@ -16,7 +16,7 @@ const navMenuItems = [
   { name: 'Notifications', path: '/dashboard/notifications', icon: Bell },
   { name: 'Community', icon: Users, subItems: [
     { name: 'Families & Members', path: '/dashboard/community/families', icon: Users },
-    { name: 'Family Head Changes', path: '/dashboard/community/head-changes', icon: UserCheck },
+    { name: 'Family Information', path: '/dashboard/community/head-changes', icon: UserCheck },
     { name: 'Member Requests', path: '/dashboard/community/member-requests', icon: FileText },
     { name: 'Family Statements', path: '/dashboard/community/statements', icon: FileText },
     { name: 'Functions & Community Charges', path: '/dashboard/community/functions', icon: PlusCircle },
@@ -51,7 +51,7 @@ const navMenuItems = [
   { name: 'Community Services', icon: PlusCircle, subItems: [{ name: 'Nikah & Marriage Charges' }, { name: 'Circumcision / Events' }, { name: 'Janazah Services' }] },
   { name: 'Documents', icon: FileText, subItems: [{ name: 'Certificates' }, { name: 'Official Letters' }] },
   { name: 'Reports', icon: BarChart3, subItems: [{ name: 'Annual Financial Audit' }, { name: 'Collection Statements' }] },
-  { name: 'Settings', icon: Settings, subItems: [{ name: 'Masjid Profile' }, { name: 'User Management' }, { name: 'PostgreSQL Sync' }] },
+  { name: 'Settings', icon: Settings, subItems: [{ name: 'Masjid Profile' }, { name: 'User Management' }, { name: 'System Sync' }] },
 ];
 
 const getActiveCategory = (pathname) => {
@@ -69,6 +69,11 @@ export const ModernUserSidebar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const closeMobileMenu = () => {
+    const menu = document.getElementById('dashboard-mobile-menu');
+    if (menu) menu.checked = false;
+    setMobileOpen(false);
+  };
 
   const userName = userInfo?.admin_name || userInfo?.full_name || userInfo?.masjid_name || 'Admin User';
   const userRole = userInfo?.admin_role || 'Masjid Administrator';
@@ -78,7 +83,7 @@ export const ModernUserSidebar = () => {
   useEffect(() => {
     const category = getActiveCategory(location.pathname);
     if (category) setOpenSubmenu(category);
-    setMobileOpen(false);
+    closeMobileMenu();
   }, [location.pathname]);
 
   useEffect(() => {
@@ -99,7 +104,7 @@ export const ModernUserSidebar = () => {
   }];
 
   const sidebar = (
-    <aside className="mds-reference-sidebar flex h-full w-[286px] flex-col border-r border-slate-200/80 bg-white/95 px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl">
+    <aside className="mds-reference-sidebar flex h-screen w-[286px] shrink-0 flex-col border-r border-slate-200/80 bg-white/95 px-4 py-4 shadow-[8px_0_40px_rgba(15,23,42,0.04)] backdrop-blur-xl sticky top-0 z-30">
       <div className="mb-4 flex items-center justify-between px-2">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-500 text-xl shadow-lg shadow-indigo-500/20">🕌</div>
@@ -108,7 +113,7 @@ export const ModernUserSidebar = () => {
             <div className="text-xs font-extrabold uppercase tracking-[0.14em] text-indigo-600">Management Suite</div>
           </div>
         </div>
-        <button onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 lg:hidden"><X className="h-5 w-5" /></button>
+        <button onClick={closeMobileMenu} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 lg:hidden" aria-label="Close Menu"><X className="h-5 w-5" /></button>
       </div>
 
       <button onClick={() => setProfileOpen(true)} className="group mb-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-3 text-left transition hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
@@ -154,6 +159,7 @@ export const ModernUserSidebar = () => {
               <NavLink
                 key={item.name}
                 to={item.path}
+                onClick={closeMobileMenu}
                 className={`flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-xs sm:text-[13px] font-extrabold transition ${
                   isActive
                     ? 'bg-slate-950 text-white shadow-md shadow-slate-900/10'
@@ -192,6 +198,7 @@ export const ModernUserSidebar = () => {
                       <NavLink
                         key={sub.name}
                         to={sub.path}
+                        onClick={closeMobileMenu}
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs sm:text-[13px] font-bold transition ${
                             isActive
@@ -228,31 +235,7 @@ export const ModernUserSidebar = () => {
 
   return (
     <>
-      <button
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-40 flex items-center justify-center rounded-xl bg-slate-950 p-2.5 text-white shadow-xl lg:hidden"
-        aria-label="Open Navigation Menu"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-
-      <div className="hidden h-screen w-[286px] shrink-0 lg:block sticky top-0 z-30">
-        {sidebar}
-      </div>
-
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm transition-opacity"
-            aria-label="Close Menu"
-          />
-          <div className="relative h-full w-[286px] max-w-[88vw] z-10">
-            {sidebar}
-          </div>
-        </div>
-      )}
-
+      {sidebar}
       <ProfileSettingsModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </>
   );

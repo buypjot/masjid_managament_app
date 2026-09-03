@@ -180,6 +180,11 @@ export const deleteCommunityMember = async (memberId) => {
   return response.data;
 };
 
+export const deleteCommunityFamily = async (familyId) => {
+  const response = await api.delete(`/api/community/families/${familyId}`);
+  return response.data;
+};
+
 export const getCommunityNextMemberCode = async (familyId = null) => {
   const params = {};
   if (familyId) params.family_id = familyId;
@@ -275,8 +280,11 @@ export const getSanthaArrears = async () => {
   return response.data;
 };
 
-export const getFamilySanthaCalculation = async (familyId) => {
-  const response = await api.get(`/api/collections/santha-calculation/${familyId}`);
+export const getFamilySanthaCalculation = async (familyId, asOfDate = null) => {
+  const url = asOfDate 
+    ? `/api/collections/santha-calculation/${familyId}?as_of_date=${asOfDate}`
+    : `/api/collections/santha-calculation/${familyId}`;
+  const response = await api.get(url);
   return response.data;
 };
 

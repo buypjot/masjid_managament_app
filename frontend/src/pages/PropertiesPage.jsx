@@ -708,11 +708,11 @@ export const PropertiesPage = ({ activeSubTab = 'properties-rent' }) => {
 
         setShowAddTenantModal(false);
       } else {
-        setTenantFormError('Failed to create tenant record in database.');
+        setTenantFormError('Failed to create tenant record.');
       }
     } catch (err) {
       console.error('Backend tenant save API error:', err.response?.data || err);
-      let errorMsg = 'Failed to create tenant record in database.';
+      let errorMsg = 'Failed to create tenant record.';
       const detail = err.response?.data?.detail;
       if (typeof detail === 'string') {
         errorMsg = detail;
@@ -1442,7 +1442,7 @@ export const PropertiesPage = ({ activeSubTab = 'properties-rent' }) => {
                           .map((item, idx) => (
                             <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
                               <td className="py-3.5 px-4 font-extrabold text-slate-900">
-                                {item.booking_no || item.booking_id || item.id}
+                                {item.booking_no?.startsWith('HLB-') ? item.booking_no : (item.booking_id?.startsWith('HLB-') ? item.booking_id : `HLB-26-${item.id < 10 ? '0' + item.id : item.id}`)}
                               </td>
                               <td className="py-3.5 px-4 font-bold text-slate-800">
                                 {item.hall_name || 'Marriage Hall'}

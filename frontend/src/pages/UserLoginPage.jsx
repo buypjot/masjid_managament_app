@@ -80,7 +80,7 @@ export const UserLoginPage = () => {
                 </form>
 
                 <div className="my-6 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400"><span className="h-px flex-1 bg-slate-200" /> Secure access <span className="h-px flex-1 bg-slate-200" /></div>
-                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 text-xs leading-5 text-slate-600"><div className="flex items-start gap-2.5"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0f766e]" /><span>Your existing WhatsApp OTP authentication and backend security remain unchanged.</span></div></div>
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 text-xs leading-5 text-slate-600"><div className="flex items-start gap-2.5"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#0f766e]" /><span>Your WhatsApp OTP authentication and security remain active.</span></div></div>
 
                 <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2"><Link to="/admin/login" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-center text-xs font-bold text-slate-700 transition-all hover:-translate-y-0.5 hover:border-emerald-300 hover:text-[#0f766e] hover:shadow-lg">Admin Login</Link><Link to="/signup" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-xs font-bold text-[#0f766e] transition-all hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-lg">Create Account</Link></div>
               </div>
