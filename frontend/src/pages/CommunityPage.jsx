@@ -3788,8 +3788,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {/* MODAL: VIEW FAMILY MEMBERS LIST (HIGH CONTRAST & ACTIONS SUPPORT)         */}
       {/* ========================================================================= */}
       {selectedFamilyForView && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-5 font-sans max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-5 font-sans max-h-[92vh] overflow-y-auto">
             
             {/* Modal Title Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -3933,17 +3933,17 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       No family members found.
                     </div>
                   ) : (
-                    <div className="border border-slate-200/90 rounded-2xl overflow-hidden text-xs shadow-sm bg-white">
-                      <table className="w-full text-left">
+                    <div className="border border-slate-200/90 rounded-2xl overflow-x-auto text-xs shadow-sm bg-white scrollbar-thin">
+                      <table className="w-full text-left min-w-[680px]">
                         <thead className="bg-slate-100/90 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
                           <tr>
-                            <th className="py-3 px-4">Member ID</th>
-                            <th className="py-3 px-4">Full Name</th>
-                            <th className="py-3 px-4">Relationship</th>
-                            <th className="py-3 px-4">Gender</th>
-                            <th className="py-3 px-4">Mobile</th>
-                            <th className="py-3 px-4">Status</th>
-                            <th className="py-3 px-4 text-right">Actions</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Member ID</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Full Name</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Relationship</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Gender</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Mobile</th>
+                            <th className="py-3 px-3.5 whitespace-nowrap">Status</th>
+                            <th className="py-3 px-3.5 text-right whitespace-nowrap">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
@@ -3954,22 +3954,22 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               className="hover:bg-slate-50/90 transition-colors cursor-pointer"
                               title="Click to view complete member profile"
                             >
-                              <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap font-mono font-bold text-slate-700">
                                 {m.member_code || `MM ${selectedFamilyForView.id}-${m.id}`}
                               </td>
-                              <td className="py-3.5 px-4 font-extrabold text-slate-900 hover:text-emerald-700 transition-colors">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap font-extrabold text-slate-900 hover:text-emerald-700 transition-colors">
                                 {m.full_name}
                               </td>
-                              <td className="py-3.5 px-4 text-slate-700 font-semibold">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap text-slate-700 font-semibold">
                                 {m.relationship_type || (m.is_head ? 'Family Head' : 'Member')}
                               </td>
-                              <td className="py-3.5 px-4 text-slate-800 font-medium">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap text-slate-800 font-medium">
                                 {m.gender || 'Male'}
                               </td>
-                              <td className="py-3.5 px-4 font-mono font-semibold text-slate-900">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap font-mono font-semibold text-slate-900">
                                 {m.mobile_number || '—'}
                               </td>
-                              <td className="py-3.5 px-4">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap">
                                 <span
                                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
                                     m.status === 'Inactive' || m.status === 'Deactive' || m.status === 'Arrears'
@@ -3980,7 +3980,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                   {m.status || 'Active'}
                                 </span>
                               </td>
-                              <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                              <td className="py-3.5 px-3.5 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-end space-x-1.5">
                                   <button
                                     onClick={() => handleViewMemberDetails(m, selectedFamilyForView)}
@@ -4386,8 +4386,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
           : 'Recent';
 
         return (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
-            <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
+            <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
               
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -4559,8 +4559,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {/* MODAL: FULL FAMILY STATEMENT & MEMBERSHIP LEDGER (PRINTABLE SUMMARY)       */}
       {/* ========================================================================= */}
       {selectedFamilyStatement && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
-          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150 border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
+          <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150 border border-slate-200">
             
             {/* Modal Title & Action Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
