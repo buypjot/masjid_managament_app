@@ -139,34 +139,7 @@ def create_property(
     return db_property
 
 
-@router.get("/{prop_id}", response_model=PropertyResponse)
-def get_property_by_id(
-    prop_id: int,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    masjid_id = get_current_masjid_id(current_user)
-    """Fetch single property by ID."""
-    db_prop = db.query(Property).filter(Property.id == prop_id, Property.masjid_id == masjid_id).first()
-    if not db_prop:
-        raise HTTPException(status_code=404, detail="Property not found")
-    return db_prop
 
-
-@router.delete("/{prop_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_property(
-    prop_id: int,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    masjid_id = get_current_masjid_id(current_user)
-    """Delete a property."""
-    db_prop = db.query(Property).filter(Property.id == prop_id, Property.masjid_id == masjid_id).first()
-    if not db_prop:
-        raise HTTPException(status_code=404, detail="Property not found")
-    db.delete(db_prop)
-    db.commit()
-    return None
 
 
 # Helper utilities for month parsing and tracking
@@ -298,15 +271,49 @@ def get_rent_stats(
             total_pending_rent += rem
 
     total_collected = max(raw_collected, total_completed_rent)
+    total_properties = db.query(Property).filter(Property.masjid_id == masjid_id).count()
 
     return {
+        "total_properties": total_properties,
         "total_collected": total_collected,
+        "total_received": total_collected,
         "total_pending": total_pending_rent,
         "total_completed": total_completed_rent,
         "pending_count": pending_tenants_count,
         "completed_count": completed_tenants_count,
-        "total_tenants": len(tenants)
+        "total_tenants": len(tenants),
+        "pending_collections": pending_tenants_count
     }
+
+
+@router.get("/{prop_id}", response_model=PropertyResponse)
+def get_property_by_id(
+    prop_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
+    """Fetch single property by ID."""
+    db_prop = db.query(Property).filter(Property.id == prop_id, Property.masjid_id == masjid_id).first()
+    if not db_prop:
+        raise HTTPException(status_code=404, detail="Property not found")
+    return db_prop
+
+
+@router.delete("/{prop_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_property(
+    prop_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
+    """Delete a property."""
+    db_prop = db.query(Property).filter(Property.id == prop_id, Property.masjid_id == masjid_id).first()
+    if not db_prop:
+        raise HTTPException(status_code=404, detail="Property not found")
+    db.delete(db_prop)
+    db.commit()
+    return None
 
 
 
@@ -557,23 +564,7 @@ def get_or_generate_tenant_invoice(db: Session, tenant: Tenant, masjid_id: int):
     return invoice
 
 
-@router.get("/rent-stats")
-def get_rent_stats(
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    masjid_id = get_current_masjid_id(current_user)
-    total_properties = db.query(Property).filter(Property.masjid_id == masjid_id).count()
-    total_tenants = db.query(Tenant).filter(Tenant.masjid_id == masjid_id).count()
-    total_collections = db.query(RentCollection).filter(RentCollection.masjid_id == masjid_id).all()
-    total_received = sum(c.amount for c in total_collections)
 
-    return {
-        "total_properties": total_properties,
-        "total_tenants": total_tenants,
-        "total_received": total_received,
-        "pending_collections": 0
-    }
 
 
 

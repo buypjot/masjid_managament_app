@@ -414,7 +414,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
   };
 
   // Open Collect Santha Modal safely
-  const handleOpenSanthaModal = (targetFamily = null) => {
+  const handleOpenSanthaModal = (targetFamily = null, defaultAllocation = 'Auto') => {
     const safeFamilies = Array.isArray(familiesList) ? familiesList : [];
     const fam = targetFamily || (safeFamilies.length > 0 ? safeFamilies[0] : null);
     const famId = fam ? (fam.id || fam.family_id) : '';
@@ -444,7 +444,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
       monthly_santha: rate,
       payment_method: 'Cash',
       financial_account: 'Main Cash',
-      allocation: 'Auto',
+      allocation: defaultAllocation,
       advance_months: 1,
       advance_period: 'Next 1 Months Credit Coverage',
       reference_id: generateAutoTransactionId('TXN'),
@@ -1245,7 +1245,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                   <p className="text-xs text-slate-500 font-medium">Record of advance Santha payments contributed ahead of schedule by families.</p>
                 </div>
                 <button
-                  onClick={() => handleOpenSanthaModal(null)}
+                  onClick={() => handleOpenSanthaModal(null, 'Advance')}
                   className="px-4 py-2 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center space-x-1.5"
                 >
                   <Plus className="w-3.5 h-3.5 text-emerald-400" />

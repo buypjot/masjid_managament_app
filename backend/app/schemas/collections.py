@@ -3,6 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class SanthaCollectionCreate(BaseModel):
+    receipt_no: Optional[str] = None
     family_id: int
     family_name: str
     family_code: Optional[str] = None

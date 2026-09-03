@@ -7,7 +7,7 @@ services:
     ports:
       - "8011:8011"
     environment:
-      - DATABASE_URL=postgresql://postgres:Sr%40983683@156.67.104.74:5432/Masjiddesk
+      - DATABASE_URL=postgresql://postgres:Sr%40983683@host.docker.internal:5432/Masjiddesk
       - ADMIN_USERNAME=Admin
       - ADMIN_PASSWORD=Sr@983683
       - SIGNUP_WEBHOOK_URL=https://cliq.zoho.com/api/v2/channelsbyname/webhookmessage/message?zapikey=1001.1082b3c2c08375718988a789389d3023.f0cb869525a1dc04ecab779149be5af4
