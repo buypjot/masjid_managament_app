@@ -605,25 +605,40 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
   // View Family Details & Members
   const handleViewFamilyDetails = async (family) => {
-    setSelectedFamilyForView(family);
+    if (!family) return;
+    const fullFamily = familiesData.find(f => f.id === family.id) || family;
+    setSelectedFamilyForView(fullFamily);
+
+    // Instantly populate familyMembersList from cache if present
+    if (expandedMembersMap[fullFamily.id] && expandedMembersMap[fullFamily.id].length > 0) {
+      setFamilyMembersList(expandedMembersMap[fullFamily.id]);
+    } else {
+      setFamilyMembersList([]);
+    }
+
     setLoadingMembers(true);
     try {
-      const members = await getCommunityMembers(family.id);
-      setFamilyMembersList(members);
+      const members = await getCommunityMembers(fullFamily.id);
+      if (Array.isArray(members)) {
+        setFamilyMembersList(members);
+        setExpandedMembersMap(prev => ({ ...prev, [fullFamily.id]: members }));
+      }
     } catch (err) {
       console.warn('Network error fetching family members. Showing default head member:', err);
-      setFamilyMembersList([
-        {
-          id: 1,
-          family_id: family.id,
-          member_code: `M-${family.id}-1`,
-          full_name: family.head_name,
-          relationship_type: 'Family Head',
-          gender: 'Male',
-          mobile_number: '+91 98400 12345',
-          status: family.status,
-        },
-      ]);
+      if (!expandedMembersMap[fullFamily.id]) {
+        setFamilyMembersList([
+          {
+            id: 1,
+            family_id: fullFamily.id,
+            member_code: `M-${fullFamily.id}-1`,
+            full_name: fullFamily.head_name,
+            relationship_type: 'Family Head',
+            gender: 'Male',
+            mobile_number: fullFamily.mobile_number || '—',
+            status: fullFamily.status || 'Active',
+          },
+        ]);
+      }
     } finally {
       setLoadingMembers(false);
     }
@@ -1095,8 +1110,15 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
             <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
               {/* Top-Right Family Head Display Section */}
-              <div className="flex items-center space-x-2.5 bg-white border border-slate-200/90 rounded-2xl px-3.5 py-1.5 shadow-2xs">
-                <div className="w-8 h-8 rounded-xl bg-[#0f172a] text-emerald-400 flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+              <div 
+                className="flex items-center space-x-2 bg-[#0f172a]/5 hover:bg-[#0f172a]/10 p-1.5 px-2.5 rounded-2xl border border-slate-200/60 transition-all cursor-pointer"
+                onClick={() => {
+                  const target = selectedFamilyForView || familiesData[0];
+                  if (target) handleViewFamilyDetails(target);
+                }}
+                title="Click to view Family Head details and members"
+              >
+                <div className="w-7 h-7 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs">
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="flex flex-col text-left">
@@ -1116,9 +1138,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   <select
                     value={selectedFamilyForView?.id || familiesData[0]?.id || ''}
                     onChange={(e) => {
+                      e.stopPropagation();
                       const selected = familiesData.find((f) => f.id === parseInt(e.target.value));
-                      if (selected) setSelectedFamilyForView(selected);
+                      if (selected) handleViewFamilyDetails(selected);
                     }}
+                    onClick={(e) => e.stopPropagation()}
                     className="text-[11px] font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-slate-900 cursor-pointer"
                     title="Switch active Family Head view"
                   >
@@ -3780,7 +3804,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 </div>
                 <div className="flex items-center space-x-4 text-xs font-medium mt-1 text-slate-600">
                   <div><span className="text-slate-400 font-semibold">Family Head:</span> <strong className="text-slate-900 font-bold">{selectedFamilyForView.head_name}</strong></div>
-                  <div><span className="text-slate-400 font-semibold">Area:</span> <strong className="text-slate-900 font-bold">{selectedFamilyForView.area}</strong></div>
+                  <div><span className="text-slate-400 font-semibold">Area:</span> <strong className="text-slate-900 font-bold">{selectedFamilyForView.area || 'Tenkasi'}</strong></div>
                 </div>
               </div>
               <button onClick={() => setSelectedFamilyForView(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-colors">
