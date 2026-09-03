@@ -1,0 +1,43 @@
+/* Sidebar typography standards across the whole software.
+ * Ensures menu items and sub-items are clear, legible, and consistently sized.
+ */
+.dashboard-theme aside nav a,
+.dashboard-theme aside nav button {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+}
+
+.dashboard-theme aside nav div > div > a,
+.dashboard-theme aside nav div > div > div,
+.dashboard-theme aside nav [class*="pl-3"] a,
+.dashboard-theme aside nav [class*="pl-3"] div {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  font-weight: 600 !important;
+}
+
+.dashboard-theme aside nav svg,
+.dashboard-theme aside nav [class*="pl-3"] svg {
+  width: 16px !important;
+  height: 16px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Eliminate tiny, unreadable text under 12px inside sidebar and cards */
+.dashboard-theme aside [class*="text-[8px]"],
+.dashboard-theme aside [class*="text-[9px]"],
+.dashboard-theme aside [class*="text-[10px]"] {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+@media (max-width: 767px) {
+  .dashboard-theme aside nav a,
+  .dashboard-theme aside nav button,
+  .dashboard-theme aside nav div > div > a {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+}
+

@@ -1,10 +1,17 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import init_db, SessionLocal
+from app.database import init_db, SessionLocal, engine
 from app.models.admin import Admin
-from app.utils.security import hash_password
+from app.utils.security import hash_password, decode_access_token
+from app.tenant_isolation import (
+    attach_tenant_columns,
+    register_tenant_events,
+    migrate_tenant_columns,
+    set_current_tenant,
+    reset_current_tenant,
+)
 from app.routers import auth_router, admin_router, masjid_router, community_router, collections_router, properties_router
 
 # Configure Logging
@@ -13,6 +20,10 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("masjid_app")
+
+# Register tenant-aware ORM mappings before SQLAlchemy creates/updates the schema.
+attach_tenant_columns()
+register_tenant_events()
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -30,6 +41,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def tenant_context_middleware(request: Request, call_next):
+    """Bind every authenticated user request to the Masjid account in its JWT."""
+    tenant_id = None
+    authorization = request.headers.get("authorization", "")
+    if authorization.lower().startswith("bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        try:
+            payload = decode_access_token(token)
+            if payload.get("role") == "user" and str(payload.get("sub", "")).isdigit():
+                tenant_id = int(payload["sub"])
+        except Exception:
+            # Authentication dependencies will return the proper 401/403 response.
+            # Keep the tenant context empty so an invalid token cannot select a tenant.
+            tenant_id = None
+
+    context_token = set_current_tenant(tenant_id)
+    try:
+        return await call_next(request)
+    finally:
+        reset_current_tenant(context_token)
+
 
 def seed_admin_user():
     """Seeds default admin user if not exists."""
@@ -59,6 +93,7 @@ def on_startup():
     logger.info("Initializing database schema...")
     try:
         init_db()
+        migrate_tenant_columns(engine)
         seed_admin_user()
     except Exception as e:
         logger.error(f"Error during startup database init: {e}")

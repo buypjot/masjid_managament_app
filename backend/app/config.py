@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     PORT: int = 8011
     
     # PostgreSQL Configuration
-    DATABASE_URL: str = "postgresql://postgres:Sr%40983683@localhost:5432/Masjiddesk"
+    DATABASE_URL: str = "postgresql://postgres:Sr%40983683@156.67.104.74:5432/Masjiddesk"
     
     # Initial Admin Credentials
     ADMIN_USERNAME: str = "Admin"

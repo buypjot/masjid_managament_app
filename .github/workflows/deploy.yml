@@ -1,0 +1,121 @@
+name: CI/CD Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/masjid-management-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/masjid-management-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          build-args: |
+            VITE_API_BASE_URL=https://masjid.amandesk.com
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/masjid-management-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/masjid-management-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Prepare Target Directory and Permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Automatically create target directory if not exists
+            sudo mkdir -p /var/opt/masjid-management-project
+            # Set the deployment user as owner
+            sudo chown -R ${{ secrets.SSH_USER }}:${{ secrets.SSH_USER }} /var/opt/masjid-management-project
+            # Set directory permissions so user can write and others can access/execute
+            sudo chmod -R 755 /var/opt/masjid-management-project
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Create Production Env File
+        env:
+          ENV_PRODUCTION: ${{ secrets.ENV_PRODUCTION }}
+        run: |
+          if [ -n "$ENV_PRODUCTION" ]; then
+            printf "%s\n" "$ENV_PRODUCTION" > .env.production
+            echo "✅ Written .env.production from GitHub Secret"
+          else
+            echo "⚠️ GitHub Secret ENV_PRODUCTION is empty or not set. Using default environment variables."
+            touch .env.production
+          fi
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}" >> .env.production
+
+      - name: Copy Production Deployment Files to Server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.production.yml,.env.production"
+          target: "/var/opt/masjid-management-project"
+
+      - name: Execute Remote SSH Deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            #!/bin/bash
+            set -e
+
+            # Ensure we deploy from /var/opt/masjid-management-project
+            cd /var/opt/masjid-management-project
+
+            # Set env permissions so docker container can read it
+            chmod 644 .env.production
+
+            # Log in to Docker Hub on the server
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+            # Run production deployment using Docker Compose exactly as requested
+            docker compose -f docker-compose.production.yml --env-file .env.production up -d --build --pull always
+
+            # Clean up old/dangling images to free disk space
+            docker image prune -f
+            echo "🚀 Deployment complete!"

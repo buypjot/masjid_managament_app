@@ -200,7 +200,7 @@ export const MasjidDashboard = () => {
                     </div>
                     <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-900">
                       <p className="font-semibold">Santha Collection Synced</p>
-                      <p className="text-[11px] text-emerald-700/90 mt-0.5">PostgreSQL live sync operational. All amounts up to date.</p>
+                      <p className="text-[11px] text-emerald-700/90 mt-0.5">System live sync operational. All amounts up to date.</p>
                     </div>
                   </div>
                 </div>
@@ -278,7 +278,7 @@ export const MasjidDashboard = () => {
             <p className="text-xs sm:text-sm font-medium text-slate-500 mt-0.5 flex items-center space-x-1.5">
               <span>{masjidName}</span>
               <span>•</span>
-              <span className="text-emerald-600 font-semibold">Live API Data</span>
+              <span className="text-emerald-600 font-semibold">System Active</span>
             </p>
           </div>
 
@@ -293,58 +293,70 @@ export const MasjidDashboard = () => {
         </div>
 
         {/* Top 4 Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {/* Metric Card 1: Families & Members */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Families & Members</span>
-              <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-baseline space-x-1.5">
-                <span>{metrics.families}</span>
-                <span className="text-xs font-extrabold text-slate-400 uppercase">Fam</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-emerald-700">{metrics.members}</span>
-                <span className="text-xs font-extrabold text-emerald-600 uppercase">Members</span>
-              </div>
-              <p className="text-[11px] font-medium text-slate-400">Total Registered Members</p>
+          <div className="group relative overflow-hidden rounded-[24px] border border-indigo-100 bg-gradient-to-b from-indigo-50/70 via-white to-violet-50/40 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-indigo-200 flex flex-col items-center justify-center text-center min-h-[175px]">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/20 transition-transform group-hover:scale-110 group-hover:rotate-6">
+              <Users className="h-6 w-6" />
             </div>
-            <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shadow-sm shrink-0">
-              <Users className="w-5 h-5" />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Families & Members</span>
+            <div className="my-1.5 flex items-center justify-center gap-2 flex-wrap">
+              <div className="flex items-baseline gap-1 text-2xl font-black text-slate-900 sm:text-3xl">
+                <span>{metrics.families}</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">Families</span>
+              </div>
+              <span className="text-slate-300 font-bold text-lg">•</span>
+              <div className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600/10 px-3 py-1 text-indigo-700 border border-indigo-500/25 shadow-xs">
+                <span className="text-2xl sm:text-3xl font-black text-indigo-700">{metrics.members}</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700">Members</span>
+              </div>
+            </div>
+            <p className="text-xs font-semibold text-slate-500">Total Registered Members</p>
+            <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-extrabold text-indigo-700 border border-indigo-200/60">
+              <span className="h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+              Registered community
             </div>
           </div>
 
           {/* Metric Card 2: Total Collections */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Collections</span>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">{formatCurrency(metrics.santhaCollected)}</div>
-              <p className="text-[11px] font-medium text-slate-400">Santha + Juma + Donations + Functions</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shadow-sm font-black text-lg shrink-0">
+          <div className="group relative overflow-hidden rounded-[24px] border border-emerald-100 bg-gradient-to-b from-emerald-50/70 via-white to-teal-50/40 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-emerald-200 flex flex-col items-center justify-center text-center min-h-[175px]">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-transform group-hover:scale-110 group-hover:rotate-6 font-black text-lg">
               ₹
+            </div>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Total Collections</span>
+            <div className="my-1 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">{formatCurrency(metrics.santhaCollected)}</div>
+            <p className="text-xs font-semibold text-slate-500">Santha + Juma + Donations</p>
+            <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-extrabold text-emerald-700 border border-emerald-200/60">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              Collected value
             </div>
           </div>
 
           {/* Metric Card 3: Pending Santha */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Pending Santha</span>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">{formatCurrency(metrics.pendingSantha)}</div>
-              <p className="text-[11px] font-medium text-slate-400">Live Dues</p>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shadow-sm font-black text-base shrink-0">
+          <div className="group relative overflow-hidden rounded-[24px] border border-amber-100 bg-gradient-to-b from-amber-50/70 via-white to-orange-50/40 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-amber-200 flex flex-col items-center justify-center text-center min-h-[175px]">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-md shadow-amber-500/20 transition-transform group-hover:scale-110 group-hover:rotate-6 font-black text-base">
               !
+            </div>
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Pending Santha</span>
+            <div className="my-1 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">{formatCurrency(metrics.pendingSantha)}</div>
+            <p className="text-xs font-semibold text-slate-500">Live Dues</p>
+            <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-extrabold text-amber-800 border border-amber-200/60">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              Needs attention
             </div>
           </div>
 
           {/* Metric Card 4: Available Balance */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-start justify-between">
-            <div className="space-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Available Balance</span>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">{formatCurrency(metrics.availableBalance)}</div>
-              <p className="text-[11px] font-medium text-slate-400">Cash + Bank</p>
+          <div className="group relative overflow-hidden rounded-[24px] border border-cyan-100 bg-gradient-to-b from-cyan-50/70 via-white to-sky-50/40 p-6 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-cyan-200 flex flex-col items-center justify-center text-center min-h-[175px]">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-md shadow-cyan-500/20 transition-transform group-hover:scale-110 group-hover:rotate-6">
+              <Layers className="h-6 w-6" />
             </div>
-            <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center shadow-sm shrink-0">
-              <Layers className="w-5 h-5" />
+            <span className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Available Balance</span>
+            <div className="my-1 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">{formatCurrency(metrics.availableBalance)}</div>
+            <p className="text-xs font-semibold text-slate-500">Cash + Bank</p>
+            <div className="mt-3.5 inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-3 py-1 text-[11px] font-extrabold text-cyan-800 border border-cyan-200/60">
+              <span className="h-2 w-2 rounded-full bg-cyan-500 animate-pulse" />
+              Current balance
             </div>
           </div>
         </div>
@@ -655,7 +667,7 @@ export const MasjidDashboard = () => {
                       <span>Active Cycle Santha Dues</span>
                       <span>₹21,000 Total Dues</span>
                     </div>
-                    <p className="text-[11px] text-amber-700">4 Registered families • Live PostgreSQL Sync</p>
+                    <p className="text-[11px] text-amber-700">4 Registered families • System Synced</p>
                   </div>
                 </>
               )}

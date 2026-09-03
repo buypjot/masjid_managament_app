@@ -20,6 +20,8 @@ class SanthaCollectionCreate(BaseModel):
     is_arrears: Optional[bool] = False
     advance_months: Optional[int] = 0
     advance_period: Optional[str] = None
+    previous_balance: Optional[float] = 0.0
+    remaining_balance: Optional[float] = 0.0
     notes: Optional[str] = None
 
 class SanthaCollectionResponse(BaseModel):
@@ -42,6 +44,8 @@ class SanthaCollectionResponse(BaseModel):
     is_arrears: bool
     advance_months: Optional[int] = 0
     advance_period: Optional[str] = None
+    previous_balance: Optional[float] = 0.0
+    remaining_balance: Optional[float] = 0.0
     notes: Optional[str] = None
     created_at: datetime
 

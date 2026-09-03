@@ -7,6 +7,7 @@ class Family(Base):
     __tablename__ = "families"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
 
     family_code = Column(String, unique=True, index=True, nullable=False)
     family_name = Column(String, nullable=False)
@@ -30,22 +31,21 @@ class Family(Base):
 
     member_count = Column(Integer, default=1)
     monthly_santha = Column(Float, default=500.0)
-    santha_due_day = Column(Integer, default=20)
+    santha_due_day = Column(Integer, default=10)
     pending_amount = Column(Float, default=0.0)
     collected_amount = Column(Float, default=0.0)
     is_poor_family = Column(Boolean, default=False)
     status = Column(String, default="Active")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-
     members = relationship("FamilyMember", back_populates="family", cascade="all, delete-orphan")
-
 
 
 class FamilyMember(Base):
     __tablename__ = "family_members"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     family_id = Column(Integer, ForeignKey("families.id"), nullable=False)
     member_code = Column(String, index=True, nullable=True)
     full_name = Column(String, nullable=False)
@@ -65,11 +65,11 @@ class FamilyMember(Base):
     family = relationship("Family", back_populates="members")
 
 
-
 class FamilyHeadChange(Base):
     __tablename__ = "family_head_changes"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     family_id = Column(Integer, ForeignKey("families.id"), nullable=False)
     family_name = Column(String, nullable=False)
     old_head = Column(String, nullable=False)
@@ -85,6 +85,7 @@ class MemberRequest(Base):
     __tablename__ = "member_requests"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     family_name = Column(String, nullable=False)
     member_name = Column(String, nullable=False)
     request_type = Column(String, default="Add Member")
@@ -97,6 +98,7 @@ class CommunityFunction(Base):
     __tablename__ = "community_functions"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     function_no = Column(String, nullable=True)
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_name = Column(String, nullable=False)

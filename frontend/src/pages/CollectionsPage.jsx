@@ -118,10 +118,23 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper function to auto-generate unique Transaction / Receipt IDs
-  const generateAutoTransactionId = (prefix = 'TXN') => {
-    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
-    return `${prefix}-${dateStr}-${randomNum}`;
+  const generateAutoTransactionId = (prefix = 'TXN', countVal = null) => {
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, ''); // 20260902
+    const yy = now.getFullYear().toString().slice(-2); // 26
+    const randomSeq = Math.floor(10 + Math.random() * 90);
+    const seq = countVal !== null && countVal !== undefined ? (countVal < 10 ? `0${countVal}` : `${countVal}`) : `${randomSeq}`;
+
+    if (prefix === 'SANT' || prefix === 'REC-SANT') {
+      return `SANT-${yy}-${seq}`;
+    }
+    if (prefix === 'JUM' || prefix === 'REC-JUM') {
+      return `JUM-${yy}-${seq}`;
+    }
+    if (prefix === 'DON' || prefix === 'REC-DON' || prefix === 'DNC') {
+      return `DON-${yy}-${seq}`;
+    }
+    return `TXN-${dateStr}-${seq}`;
   };
 
   // Helper to get today's date in YYYY-MM-DD
@@ -663,7 +676,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
       await fetchDataForTab();
     } catch (err) {
       console.error('Error saving Santha payment:', err);
-      setSubmitError(err.response?.data?.detail || 'Failed to save Santha collection to database.');
+      setSubmitError(err.response?.data?.detail || 'Failed to save Santha collection.');
     } finally {
       setIsSubmitting(false);
     }
@@ -914,10 +927,10 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
   const totalDonationGraveyard = safeDonationsList.reduce((sum, item) => sum + (item.graveyard_amount || 0), 0);
 
   return (
-    <div className="flex min-h-screen bg-[#f8fafc] font-sans">
+    <div className="dashboard-theme flex h-screen overflow-hidden bg-[#f8fafc] font-sans">
       <UserSidebar />
 
-      <div className="flex-1 flex flex-col min-h-screen justify-between overflow-y-auto">
+      <div className="min-w-0 h-full flex-1 overflow-y-auto flex flex-col justify-between">
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
           
           {/* Breadcrumb Header */}
@@ -1065,7 +1078,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                       {loading ? (
                         <tr>
-                          <td colSpan="8" className="py-8 text-center text-slate-400">Loading live Santha collection records from PostgreSQL...</td>
+                          <td colSpan="8" className="py-8 text-center text-slate-400">Loading live Santha collection records...</td>
                         </tr>
                       ) : (() => {
                         const safeFamilies = Array.isArray(families) ? families : [];
@@ -1088,37 +1101,52 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                         }
 
                         return filtered.map((item) => {
-                          const isPaid = item.status === 'Paid';
+                          const outstanding = item.balance ?? 0;
+                          const isFullPaid = outstanding === 0;
+                          const isPartiallyPaid = outstanding > 0 && (item.paid > 0);
+
+                          let statusBadge = (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                              ✓ Full Amount Paid
+                            </span>
+                          );
+
+                          if (isPartiallyPaid) {
+                            statusBadge = (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-amber-50 text-amber-800 border-amber-300">
+                                ⚡ Partially Paid (₹{outstanding.toLocaleString()} Pending)
+                              </span>
+                            );
+                          } else if (outstanding > 0) {
+                            statusBadge = (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-rose-50 text-rose-800 border-rose-300">
+                                ⚠️ Outstanding Dues (₹{outstanding.toLocaleString()})
+                              </span>
+                            );
+                          }
+
                           return (
                             <tr key={item.family_id} className="hover:bg-slate-50/80 transition-colors">
                               <td className="py-4 px-4 sm:px-6 font-bold text-slate-900">
                                 {item.family_code} • {item.family_name}
                               </td>
-                              <td className="py-4 px-4 sm:px-6 text-slate-700">
+                              <td className="py-4 px-4 sm:px-6 text-slate-700 font-bold">
                                 {item.head_name}
                               </td>
-                              <td className="py-4 px-4 sm:px-6 text-slate-600">
-                                {item.period}
+                              <td className="py-4 px-4 sm:px-6 text-slate-600 font-medium">
+                                {item.joining_date || item.period}
                               </td>
                               <td className="py-4 px-4 sm:px-6 font-bold text-slate-900">
                                 ₹{item.due.toLocaleString()}
                               </td>
-                              <td className="py-4 px-4 sm:px-6 font-bold text-slate-900">
+                              <td className="py-4 px-4 sm:px-6 font-bold text-emerald-600">
                                 ₹{item.paid.toLocaleString()}
                               </td>
-                              <td className="py-4 px-4 sm:px-6 font-bold text-slate-900">
-                                ₹{item.balance.toLocaleString()}
+                              <td className="py-4 px-4 sm:px-6 font-bold text-rose-700">
+                                ₹{outstanding.toLocaleString()}
                               </td>
                               <td className="py-4 px-4 sm:px-6">
-                                <span
-                                  className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold border ${
-                                    isPaid
-                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                      : 'bg-rose-50 text-rose-600 border-rose-200'
-                                  }`}
-                                >
-                                  {isPaid ? 'Paid' : 'Pending'}
-                                </span>
+                                {statusBadge}
                               </td>
                               <td className="py-4 px-4 sm:px-6 text-right">
                                 <button
@@ -1126,7 +1154,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                                   className="px-3 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors inline-flex items-center space-x-1.5"
                                 >
                                   <Edit2 className="w-3 h-3 text-emerald-400" />
-                                  <span>Edit / Collect</span>
+                                  <span>Manage Record</span>
                                 </button>
                               </td>
                             </tr>
@@ -1168,7 +1196,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                     {loading ? (
                       <tr>
-                        <td colSpan="8" className="py-8 text-center text-slate-400">Loading Santha arrears from PostgreSQL...</td>
+                        <td colSpan="8" className="py-8 text-center text-slate-400">Loading Santha arrears...</td>
                       </tr>
                     ) : safeArrearsList.length === 0 ? (
                       <tr>
@@ -1301,6 +1329,8 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                       <th className="py-3.5 px-4">FAMILY</th>
                       <th className="py-3.5 px-4">PERIOD</th>
                       <th className="py-3.5 px-4">AMOUNT</th>
+                      <th className="py-3.5 px-4">PREV BAL</th>
+                      <th className="py-3.5 px-4">REMAINING BAL</th>
                       <th className="py-3.5 px-4">PAYMENT MODE</th>
                       <th className="py-3.5 px-4 text-right">ACTION</th>
                     </tr>
@@ -1308,11 +1338,11 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                   <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                     {loading ? (
                       <tr>
-                        <td colSpan="7" className="py-8 text-center text-slate-400">Loading receipts ledger...</td>
+                        <td colSpan="9" className="py-8 text-center text-slate-400">Loading receipts ledger...</td>
                       </tr>
                     ) : safeReceiptsList.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="py-8 text-center text-slate-400">No receipts generated yet.</td>
+                        <td colSpan="9" className="py-8 text-center text-slate-400">No receipts generated yet.</td>
                       </tr>
                     ) : (
                       safeReceiptsList.map((item) => (
@@ -1322,6 +1352,8 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                           <td className="py-3.5 px-4 font-bold text-slate-900">{item.family_name} ({item.family_code})</td>
                           <td className="py-3.5 px-4 text-slate-700">{item.month_year}</td>
                           <td className="py-3.5 px-4 font-extrabold text-emerald-700">₹{item.amount.toLocaleString()}</td>
+                          <td className="py-3.5 px-4 font-mono text-slate-500 font-semibold">₹{(item.previous_balance || 0).toLocaleString()}</td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-rose-600">₹{(item.remaining_balance || 0).toLocaleString()}</td>
                           <td className="py-3.5 px-4 text-slate-600">{item.payment_method}</td>
                           <td className="py-3.5 px-4 text-right flex items-center justify-end space-x-2">
                             <button
@@ -1457,7 +1489,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                       {loading ? (
                         <tr>
-                          <td colSpan="8" className="py-8 text-center text-slate-400">Loading Jumma collection records from PostgreSQL...</td>
+                          <td colSpan="8" className="py-8 text-center text-slate-400">Loading Jumma collection records...</td>
                         </tr>
                       ) : (() => {
                         const filtered = safeJumaList.filter((item) => {
@@ -1481,7 +1513,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                         return filtered.map((item) => {
                           return (
                             <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-4 px-4 font-mono font-bold text-slate-700">{item.receipt_no || `REC-JUM-${item.id}`}</td>
+                              <td className="py-4 px-4 font-mono font-bold text-slate-700">{item.receipt_no || `JUM-26-${item.id < 10 ? '0' + item.id : item.id}`}</td>
                               <td className="py-4 px-4 text-slate-600 whitespace-nowrap">{item.collection_date || '—'}</td>
                               <td className="py-4 px-4 font-bold text-slate-900">{item.donor_name || 'Friday Jumma Jamaat'}</td>
                               <td className="py-4 px-4 text-slate-700 font-bold">
@@ -1637,7 +1669,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                     <tbody className="divide-y divide-slate-100 font-medium text-slate-800">
                       {loading ? (
                         <tr>
-                          <td colSpan="15" className="py-8 text-center text-slate-400">Loading live donation records from PostgreSQL...</td>
+                          <td colSpan="15" className="py-8 text-center text-slate-400">Loading live donation records...</td>
                         </tr>
                       ) : (() => {
                         const filtered = safeDonationsList.filter((item) => {
@@ -1672,7 +1704,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                                   <span>{isFamily ? `Family (${item.family_code || 'F-001'})` : 'Other Person'}</span>
                                 </span>
                               </td>
-                              <td className="py-3.5 px-3 font-mono font-bold text-slate-700">{item.receipt_no || `REC-DON-${item.id}`}</td>
+                              <td className="py-3.5 px-3 font-mono font-bold text-slate-700">{item.receipt_no || `DON-26-${item.id < 10 ? '0' + item.id : item.id}`}</td>
                               <td className="py-3.5 px-3 text-slate-600 whitespace-nowrap">{item.donation_date || '—'}</td>
                               <td className="py-3.5 px-3 font-bold text-slate-900">{item.donor_name || 'Anonymous Donor'}</td>
                               <td className="py-3.5 px-3 text-slate-700">₹{(item.general_amount || 0).toLocaleString()}</td>
@@ -1712,7 +1744,7 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
         </main>
 
         <footer className="text-center py-4 border-t border-slate-200/60 bg-[#f8fafc] text-slate-400 text-xs font-medium shrink-0">
-          Masjid Manager • Live PostgreSQL Backend Connected
+          Masjid Manager • Active System
         </footer>
       </div>
 
@@ -3334,6 +3366,16 @@ export const CollectionsPage = ({ activeSubTab = 'santha' }) => {
                 <div>
                   <span className="text-slate-400 font-semibold uppercase block text-[10px]">Paid Amount</span>
                   <span className="font-extrabold text-emerald-700 text-sm">₹{selectedReceipt.amount.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                <div>
+                  <span className="text-slate-400 font-semibold uppercase block text-[10px]">Previous Balance</span>
+                  <span className="font-bold text-slate-800">₹{(selectedReceipt.previous_balance || 0).toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-slate-400 font-semibold uppercase block text-[10px]">Remaining Balance</span>
+                  <span className="font-extrabold text-rose-600 text-sm">₹{(selectedReceipt.remaining_balance || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>

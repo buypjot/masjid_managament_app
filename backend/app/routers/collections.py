@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 
 from app.database import get_db
+from app.utils.security import get_current_user, get_current_masjid_id
 from app.models.collections import SanthaCollection, JumaCollection, Donation
 import json
 from app.models.community import Family, FamilyHeadChange
@@ -18,14 +19,41 @@ from app.schemas.collections import (
 
 router = APIRouter(prefix="/api/collections", tags=["Collections Management"])
 
-def calculate_family_santha_arrears(family: Family, collections: list, current_year: int = 2026, current_month: int = 8) -> dict:
+def calculate_family_santha_arrears(
+    family: Family, 
+    collections: list, 
+    as_of_date: Optional[str] = None
+) -> dict:
     """
-    Sequence: Joining Date → Applicable Months → Required Santha → Previous Payments → Advance Payments → Pending/Arrear Amount
+    Sequence: Joining Date → Due Day → Applicable Due Dates → Total Amount Due → Existing Payment History → Total Paid → Outstanding / Remaining Balance
     """
     month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     
-    joining_year = current_year
-    joining_month = 1
+    target_dt = datetime.now()
+    if as_of_date:
+        as_of_str = str(as_of_date).strip()
+        try:
+            if "T" in as_of_str:
+                as_of_str = as_of_str.split("T")[0]
+            if "-" in as_of_str:
+                parts = as_of_str.split("-")
+                target_dt = datetime(int(parts[0]), int(parts[1]), int(parts[2]))
+            elif "/" in as_of_str:
+                parts = as_of_str.split("/")
+                target_dt = datetime(int(parts[2]), int(parts[1]), int(parts[0]))
+        except Exception:
+            pass
+
+    target_year = target_dt.year
+    target_month = target_dt.month
+    target_day = target_dt.day
+
+    monthly_rate = float(family.monthly_santha) if family.monthly_santha is not None else 500.0
+    due_day = int(family.santha_due_day) if family.santha_due_day is not None else 10
+
+    joining_year = target_year
+    joining_month = target_month
+    joining_day = 1
 
     j_date = family.joining_date
     if j_date:
@@ -36,47 +64,56 @@ def calculate_family_santha_arrears(family: Family, collections: list, current_y
                 if len(parts[0]) == 4:
                     joining_year = int(parts[0])
                     joining_month = int(parts[1])
+                    if len(parts) >= 3:
+                        joining_day = int(parts[2])
                 elif len(parts[2]) == 4:
                     joining_year = int(parts[2])
                     joining_month = int(parts[1])
+                    joining_day = int(parts[0])
             elif "/" in j_str:
                 parts = j_str.split("/")
                 if len(parts[2]) == 4:
                     joining_year = int(parts[2])
                     joining_month = int(parts[1])
+                    joining_day = int(parts[0])
         except Exception:
             pass
     elif family.created_at:
         joining_year = family.created_at.year
         joining_month = family.created_at.month
+        joining_day = family.created_at.day
 
-    if joining_year > current_year:
-        applicable_months = 0
-    elif joining_year == current_year:
-        applicable_months = max(1, current_month - joining_month + 1)
-    else:
-        years_diff = current_year - joining_year
-        applicable_months = (years_diff * 12) + (current_month - joining_month + 1)
-        applicable_months = max(1, applicable_months)
-
-    monthly_rate = family.monthly_santha or 500.0
-    required_santha = applicable_months * monthly_rate
+    due_months_count = 0
+    total_months_elapsed = 0
+    month_breakdown = []
 
     fam_cols = [c for c in collections if c.family_id == family.id]
-    total_paid = sum(c.amount for c in fam_cols)
-
-    pending_arrears = max(0.0, required_santha - total_paid)
-    advance_amount = max(0.0, total_paid - required_santha)
-    months_overdue = int(pending_arrears // monthly_rate) if monthly_rate > 0 else 0
-    advance_months = int(advance_amount // monthly_rate) if monthly_rate > 0 else 0
-
-    month_breakdown = []
+    total_paid = sum(float(c.amount or 0.0) for c in fam_cols)
     running_paid = total_paid
-    y = joining_year
-    m = joining_month
 
-    for idx in range(1, applicable_months + 1):
-        m_name = f"{month_names[m - 1]} {y}"
+    curr_y = joining_year
+    curr_m = joining_month
+
+    while True:
+        if curr_y > target_year or (curr_y == target_year and curr_m > target_month):
+            break
+
+        total_months_elapsed += 1
+        m_name = f"{month_names[curr_m - 1]} {curr_y}"
+        
+        is_past_month = (curr_y < target_year) or (curr_y == target_year and curr_m < target_month)
+        is_current_month = (curr_y == target_year and curr_m == target_month)
+        
+        if is_past_month:
+            is_due = True
+        elif is_current_month:
+            is_due = (target_day >= due_day)
+        else:
+            is_due = False
+
+        if is_due:
+            due_months_count += 1
+
         if running_paid >= monthly_rate:
             m_status = "Paid"
             m_paid = monthly_rate
@@ -88,41 +125,66 @@ def calculate_family_santha_arrears(family: Family, collections: list, current_y
             m_pending = monthly_rate - running_paid
             running_paid = 0.0
         else:
-            m_status = "Unpaid / Pending"
+            m_status = "Due" if is_due else "Not Due Yet"
             m_paid = 0.0
-            m_pending = monthly_rate
+            m_pending = monthly_rate if is_due else 0.0
 
         month_breakdown.append({
             "month": m_name,
-            "year": y,
-            "month_num": m,
+            "year": curr_y,
+            "month_num": curr_m,
             "due_amount": monthly_rate,
             "paid_amount": m_paid,
             "pending_amount": m_pending,
+            "is_due": is_due,
             "status": m_status
         })
 
-        m += 1
-        if m > 12:
-            m = 1
-            y += 1
+        curr_m += 1
+        if curr_m > 12:
+            curr_m = 1
+            curr_y += 1
+
+    required_santha = due_months_count * monthly_rate
+    pending_arrears = max(0.0, required_santha - total_paid)
+    advance_amount = max(0.0, total_paid - required_santha)
+    months_overdue = int(pending_arrears // monthly_rate) if monthly_rate > 0 else 0
+    advance_months = int(advance_amount // monthly_rate) if monthly_rate > 0 else 0
+
+    if required_santha == 0:
+        payment_status = "Paid"
+    elif pending_arrears == 0:
+        payment_status = "Paid"
+    elif total_paid > 0:
+        payment_status = "Partially Paid"
+    else:
+        payment_status = "Due"
+
+    joining_date_formatted = f"{joining_day:02d} {month_names[joining_month - 1][:3]} {joining_year}" if family.joining_date else f"{month_names[joining_month - 1]} {joining_year}"
 
     return {
         "family_id": family.id,
         "family_code": family.family_code or f"F-{family.id:04d}",
         "family_name": family.family_name,
         "head_name": family.head_name or family.family_name,
-        "joining_date": f"{month_names[joining_month - 1]} {joining_year}",
+        "monthly_santha": monthly_rate,
+        "monthly_rate": monthly_rate,
+        "due_day": due_day,
+        "joining_date": joining_date_formatted,
         "joining_year": joining_year,
         "joining_month": joining_month,
-        "applicable_months": applicable_months,
-        "monthly_rate": monthly_rate,
+        "joining_day": joining_day,
+        "target_date": target_dt.strftime("%Y-%m-%d"),
+        "applicable_months": total_months_elapsed,
+        "due_months_count": due_months_count,
         "required_santha": required_santha,
         "total_paid": total_paid,
         "pending_arrears": pending_arrears,
+        "outstanding_amount": pending_arrears,
         "advance_amount": advance_amount,
         "months_overdue": months_overdue,
         "advance_months": advance_months,
+        "payment_status": payment_status,
         "suggested_collection_amount": pending_arrears if pending_arrears > 0 else monthly_rate,
         "month_breakdown": month_breakdown
     }
@@ -132,14 +194,16 @@ def calculate_family_santha_arrears(family: Family, collections: list, current_y
 async def get_santha_overview(
     month: Optional[str] = "August",
     year: Optional[int] = 2026,
+    current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get live Santha Collection metrics and family ledger breakdown directly from PostgreSQL database.
     NO dummy or mock data used.
     """
-    families = db.query(Family).all()
-    collections = db.query(SanthaCollection).all()
+    families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
 
     total_families_count = len(families)
     total_monthly_due = sum((f.monthly_santha or 500.0) for f in families)
@@ -151,9 +215,16 @@ async def get_santha_overview(
     families_with_arrears = 0
     total_arrears_amount = 0.0
 
+    target_year = year or 2026
+    month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    target_month_num = 9
+    if month and month in month_names:
+        target_month_num = month_names.index(month) + 1
+    as_of_str = f"{target_year}-{target_month_num:02d}-28"
+
     ledger_items = []
     for f in families:
-        calc = calculate_family_santha_arrears(f, collections, current_year=year or 2026, current_month=8)
+        calc = calculate_family_santha_arrears(f, collections, as_of_date=as_of_str)
         
         fam_collections = [c for c in collections if c.family_id == f.id]
         month_paid = sum(c.amount for c in fam_collections if c.month == month and c.year == year)
@@ -162,7 +233,15 @@ async def get_santha_overview(
             families_with_arrears += 1
             total_arrears_amount += calc["pending_arrears"]
 
-        status = "Paid" if month_paid >= (f.monthly_santha or 500.0) else "Pending"
+        due_day_val = f.santha_due_day or 10
+        today_dt = datetime.now()
+        if today_dt.day <= due_day_val:
+            next_due = datetime(today_dt.year, today_dt.month, due_day_val)
+        else:
+            nm = today_dt.month + 1 if today_dt.month < 12 else 1
+            ny = today_dt.year if today_dt.month < 12 else today_dt.year + 1
+            next_due = datetime(ny, nm, due_day_val)
+        next_due_str = next_due.strftime("%d %b %Y")
 
         ledger_items.append({
             "family_id": f.id,
@@ -170,14 +249,17 @@ async def get_santha_overview(
             "family_name": f.family_name,
             "head_name": f.head_name or f.family_name,
             "period": f"{month[:3]} {year}",
-            "due": f.monthly_santha or 500.0,
-            "paid": month_paid,
+            "monthly_santha": f.monthly_santha or 200.0,
+            "due_day": due_day_val,
+            "due": calc["required_santha"],
+            "paid": calc["total_paid"],
             "balance": calc["pending_arrears"],
-            "status": status,
+            "status": calc["payment_status"],
             "total_paid": calc["total_paid"],
             "joining_date": calc["joining_date"],
             "applicable_months": calc["applicable_months"],
-            "required_santha": calc["required_santha"]
+            "required_santha": calc["required_santha"],
+            "next_due_date": next_due_str
         })
 
     advance_collections = [c for c in collections if c.is_advance or c.allocation == "Advance"]
@@ -199,25 +281,50 @@ async def get_santha_overview(
     }
 
 @router.get("/santha", response_model=List[SanthaCollectionResponse])
-async def get_santha_collections(db: Session = Depends(get_db)):
+async def get_santha_collections(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve all recorded Santha collections."""
-    records = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).all()
+    records = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).all()
     return records
 
 @router.post("/santha", response_model=SanthaCollectionResponse)
-async def create_santha_collection(payload: SanthaCollectionCreate, db: Session = Depends(get_db)):
+async def create_santha_collection(
+    payload: SanthaCollectionCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record a new Santha payment for a family and save to PostgreSQL database."""
     try:
-        count = db.query(SanthaCollection).count()
-        rcp_code = f"REC-SANT-{2601 + count}"
+        count = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).count()
+        year_suffix = datetime.now().strftime("%y")
+        date_str = datetime.now().strftime("%Y%m%d")
+
+        default_rcp = f"SANT-{year_suffix}-{count + 1:02d}"
+        rcp_code = payload.receipt_no if (payload.receipt_no and payload.receipt_no.strip()) else default_rcp
 
         is_adv = payload.is_advance or (payload.allocation == "Advance")
         is_arr = payload.is_arrears or (payload.allocation == "Specific")
 
-        import random
-        ref_id = payload.reference_id if payload.reference_id and payload.reference_id.strip() else f"TXN-{datetime.now().strftime('%Y%m%d')}-{random.randint(1000, 9999)}"
+        default_ref = f"TXN-{date_str}-{count + 1:02d}"
+        ref_id = payload.reference_id if (payload.reference_id and payload.reference_id.strip() and not payload.reference_id.startswith("TXN-202")) else default_ref
+
+        # Get existing family collections to calculate previous balance
+        existing_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
+        fam_obj = db.query(Family).filter(Family.id == payload.family_id, Family.masjid_id == masjid_id).first()
+        
+        prev_balance = 0.0
+        if fam_obj:
+            calc_before = calculate_family_santha_arrears(fam_obj, existing_cols, as_of_date=payload.payment_date)
+            prev_balance = calc_before["pending_arrears"]
+        
+        rem_balance = max(0.0, prev_balance - payload.amount)
 
         new_rec = SanthaCollection(
+            masjid_id=masjid_id,
             receipt_no=rcp_code,
             family_id=payload.family_id,
             family_code=payload.family_code or f"F-{payload.family_id:04d}",
@@ -236,13 +343,15 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
             is_arrears=is_arr,
             advance_months=payload.advance_months or 0,
             advance_period=payload.advance_period or f"{payload.month} {payload.year}",
+            previous_balance=prev_balance,
+            remaining_balance=rem_balance,
             notes=payload.notes
         )
 
         db.add(new_rec)
 
         # Update family collection totals & log audit record to FamilyHeadChange
-        fam_obj = db.query(Family).filter(Family.id == payload.family_id).first()
+        fam_obj = db.query(Family).filter(Family.id == payload.family_id, Family.masjid_id == masjid_id).first()
         old_head_name = fam_obj.head_name if fam_obj else (payload.head_name or payload.family_name)
         if fam_obj:
             fam_obj.collected_amount = (fam_obj.collected_amount or 0.0) + payload.amount
@@ -260,6 +369,7 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
                     pmt_dt = datetime.utcnow()
 
         head_log = FamilyHeadChange(
+            masjid_id=masjid_id,
             family_id=payload.family_id,
             family_name=payload.family_name,
             old_head=old_head_name,
@@ -294,10 +404,14 @@ async def create_santha_collection(payload: SanthaCollectionCreate, db: Session 
         raise HTTPException(status_code=500, detail=f"Failed to record Santha collection: {str(e)}")
 
 @router.get("/santha-arrears")
-async def get_santha_arrears(db: Session = Depends(get_db)):
+async def get_santha_arrears(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List families with pending/overdue Santha arrears based on Joining Date."""
-    families = db.query(Family).all()
-    collections = db.query(SanthaCollection).all()
+    families = db.query(Family).filter(Family.masjid_id == masjid_id).all()
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
     arrears_list = []
     
     for f in families:
@@ -325,21 +439,32 @@ async def get_santha_arrears(db: Session = Depends(get_db)):
 
 
 @router.get("/santha-calculation/{family_id}")
-async def get_family_santha_calculation(family_id: int, db: Session = Depends(get_db)):
+async def get_family_santha_calculation(
+    family_id: int,
+    as_of_date: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """
     Get full joining-date based Santha calculation and month-by-month payment history for a family.
     """
-    family = db.query(Family).filter(Family.id == family_id).first()
+    family = db.query(Family).filter(Family.id == family_id, Family.masjid_id == masjid_id).first()
     if not family:
         raise HTTPException(status_code=404, detail="Family record not found.")
 
-    collections = db.query(SanthaCollection).all()
-    return calculate_family_santha_arrears(family, collections)
+    collections = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
+    return calculate_family_santha_arrears(family, collections, as_of_date=as_of_date)
 
 @router.get("/santha-advances")
-async def get_santha_advances(db: Session = Depends(get_db)):
+async def get_santha_advances(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List recorded advance Santha payments."""
     advances = db.query(SanthaCollection).filter(
+        SanthaCollection.masjid_id == masjid_id,
         (SanthaCollection.is_advance == True) | (SanthaCollection.allocation == "Advance")
     ).order_by(SanthaCollection.id.desc()).all()
     return [
@@ -363,9 +488,15 @@ async def get_santha_advances(db: Session = Depends(get_db)):
     ]
 
 @router.put("/santha/{collection_id}")
-async def update_santha_collection(collection_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_santha_collection(
+    collection_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update an existing Santha payment or advance record in PostgreSQL."""
-    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id).first()
+    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id, SanthaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Santha collection record not found")
 
@@ -395,9 +526,14 @@ async def update_santha_collection(collection_id: int, payload: dict, db: Sessio
         raise HTTPException(status_code=500, detail=f"Failed to update Santha collection record: {str(e)}")
 
 @router.delete("/santha/{collection_id}")
-async def delete_santha_collection(collection_id: int, db: Session = Depends(get_db)):
+async def delete_santha_collection(
+    collection_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a Santha collection record from PostgreSQL."""
-    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id).first()
+    rec = db.query(SanthaCollection).filter(SanthaCollection.id == collection_id, SanthaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Santha collection record not found")
 
@@ -410,9 +546,13 @@ async def delete_santha_collection(collection_id: int, db: Session = Depends(get
         raise HTTPException(status_code=500, detail=f"Failed to delete record: {str(e)}")
 
 @router.get("/santha-receipts")
-async def get_santha_receipts(db: Session = Depends(get_db)):
+async def get_santha_receipts(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """List all generated Santha collection receipts."""
-    receipts = db.query(SanthaCollection).order_by(SanthaCollection.id.desc()).all()
+    receipts = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).order_by(SanthaCollection.id.desc()).all()
     return [
         {
             "id": r.id,
@@ -435,16 +575,27 @@ async def get_santha_receipts(db: Session = Depends(get_db)):
 # --------------------------------------------------------------------------
 
 @router.get("/juma", response_model=List[JumaCollectionResponse])
-async def get_juma_collections(db: Session = Depends(get_db)):
+async def get_juma_collections(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve Friday Juma Hundi / Box collection records."""
-    return db.query(JumaCollection).order_by(JumaCollection.id.desc()).all()
+    return db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).order_by(JumaCollection.id.desc()).all()
 
 @router.post("/juma", response_model=JumaCollectionResponse)
-async def create_juma_collection(payload: JumaCollectionCreate, db: Session = Depends(get_db)):
+async def create_juma_collection(
+    payload: JumaCollectionCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record new Friday Juma Box or Category collection."""
     try:
-        count = db.query(JumaCollection).count()
-        rcp_code = payload.receipt_no or f"REC-JUM-{2601 + count}"
+        count = db.query(JumaCollection).filter(JumaCollection.masjid_id == masjid_id).count()
+        year_suffix = datetime.now().strftime("%y")
+        default_rcp = f"JUM-{year_suffix}-{count + 1:02d}"
+        rcp_code = payload.receipt_no if (payload.receipt_no and payload.receipt_no.strip() and not payload.receipt_no.startswith("REC-JUM")) else default_rcp
         
         pmt_sum = (payload.cash_amount or 0.0) + (payload.upi_amount or 0.0) + \
                   (payload.paytm_amount or 0.0) + (payload.bank_amount or 0.0) + \
@@ -468,6 +619,7 @@ async def create_juma_collection(payload: JumaCollectionCreate, db: Session = De
             pm_method = ", ".join(methods) if methods else "Cash"
 
         new_juma = JumaCollection(
+            masjid_id=masjid_id,
             contributor_type=payload.contributor_type or "Family",
             family_id=payload.family_id,
             family_code=payload.family_code,
@@ -502,9 +654,15 @@ async def create_juma_collection(payload: JumaCollectionCreate, db: Session = De
         raise HTTPException(status_code=500, detail=f"Failed to record Juma collection: {str(e)}")
 
 @router.put("/juma/{juma_id}")
-async def update_juma_collection(juma_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_juma_collection(
+    juma_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update a Juma collection record in PostgreSQL."""
-    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id).first()
+    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id, JumaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Juma collection record not found")
 
@@ -534,9 +692,14 @@ async def update_juma_collection(juma_id: int, payload: dict, db: Session = Depe
         raise HTTPException(status_code=500, detail=f"Failed to update Juma record: {str(e)}")
 
 @router.delete("/juma/{juma_id}")
-async def delete_juma_collection(juma_id: int, db: Session = Depends(get_db)):
+async def delete_juma_collection(
+    juma_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a Juma collection record from PostgreSQL."""
-    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id).first()
+    rec = db.query(JumaCollection).filter(JumaCollection.id == juma_id, JumaCollection.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Juma collection record not found")
 
@@ -553,16 +716,27 @@ async def delete_juma_collection(juma_id: int, db: Session = Depends(get_db)):
 # --------------------------------------------------------------------------
 
 @router.get("/donations", response_model=List[DonationResponse])
-async def get_donations(db: Session = Depends(get_db)):
+async def get_donations(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Retrieve all recorded donations and Sadaqah contributions."""
-    return db.query(Donation).order_by(Donation.id.desc()).all()
+    return db.query(Donation).filter(Donation.masjid_id == masjid_id).order_by(Donation.id.desc()).all()
 
 @router.post("/donations", response_model=DonationResponse)
-async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)):
+async def create_donation(
+    payload: DonationCreate,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Record a new Donation or Sadaqah contribution with full category and payment breakdown."""
     try:
-        count = db.query(Donation).count()
-        rcp_code = payload.receipt_no or f"REC-DON-{2601 + count}"
+        count = db.query(Donation).filter(Donation.masjid_id == masjid_id).count()
+        year_suffix = datetime.now().strftime("%y")
+        default_rcp = f"DON-{year_suffix}-{count + 1:02d}"
+        rcp_code = payload.receipt_no if (payload.receipt_no and payload.receipt_no.strip() and not payload.receipt_no.startswith("REC-DON")) else default_rcp
 
         pmt_sum = (payload.cash_amount or 0.0) + (payload.upi_amount or 0.0) + \
                   (payload.paytm_amount or 0.0) + (payload.bank_amount or 0.0) + \
@@ -586,6 +760,7 @@ async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)
             pm_method = ", ".join(methods) if methods else "Cash"
 
         new_don = Donation(
+            masjid_id=masjid_id,
             contributor_type=payload.contributor_type or "Family",
             family_id=payload.family_id,
             family_code=payload.family_code,
@@ -620,9 +795,15 @@ async def create_donation(payload: DonationCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=500, detail=f"Failed to record donation: {str(e)}")
 
 @router.put("/donations/{donation_id}")
-async def update_donation(donation_id: int, payload: dict, db: Session = Depends(get_db)):
+async def update_donation(
+    donation_id: int,
+    payload: dict,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Update a donation record in PostgreSQL."""
-    rec = db.query(Donation).filter(Donation.id == donation_id).first()
+    rec = db.query(Donation).filter(Donation.id == donation_id, Donation.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Donation record not found")
 
@@ -652,9 +833,14 @@ async def update_donation(donation_id: int, payload: dict, db: Session = Depends
         raise HTTPException(status_code=500, detail=f"Failed to update donation record: {str(e)}")
 
 @router.delete("/donations/{donation_id}")
-async def delete_donation(donation_id: int, db: Session = Depends(get_db)):
+async def delete_donation(
+    donation_id: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    masjid_id = get_current_masjid_id(current_user)
     """Delete a donation record from PostgreSQL."""
-    rec = db.query(Donation).filter(Donation.id == donation_id).first()
+    rec = db.query(Donation).filter(Donation.id == donation_id, Donation.masjid_id == masjid_id).first()
     if not rec:
         raise HTTPException(status_code=404, detail="Donation record not found")
 

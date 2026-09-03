@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/masjid-management-backend:latest
+    container_name: masjid_backend
+    ports:
+      - "8011:8011"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-postgresql://postgres:Sr%40983683@156.67.104.74:5432/Masjiddesk}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-Admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Sr@983683}
+      - SIGNUP_WEBHOOK_URL=${SIGNUP_WEBHOOK_URL}
+      - WEBHOOK_BOT_NAME=${WEBHOOK_BOT_NAME:-Majid_New_Member}
+      - OTP_PROVIDER=${OTP_PROVIDER:-whatsapp}
+      - OTP_API_URL=${OTP_API_URL:-https://waapi.buypapps.com/v1/message/send-message}
+      - OTP_API_KEY=${OTP_API_KEY}
+      - OTP_TEMPLATE_NAME=${OTP_TEMPLATE_NAME:-buyp_play_zone}
+      - JWT_SECRET=${JWT_SECRET:-masjid_management_system_super_secret_jwt_key_2026_buyp}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://masjid.amandesk.com,https://masjith.amandesk.com,http://masjid.amandesk.com}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 64M
+
+  frontend:
+    image: ${DOCKER_USERNAME}/masjid-management-frontend:latest
+    container_name: masjid_frontend
+    ports:
+      - "9017:9017"
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://masjid.amandesk.com}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 16M

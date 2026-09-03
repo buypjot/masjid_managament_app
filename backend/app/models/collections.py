@@ -6,6 +6,7 @@ class SanthaCollection(Base):
     __tablename__ = "santha_collections"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     receipt_no = Column(String, nullable=False, index=True)
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)
@@ -24,6 +25,8 @@ class SanthaCollection(Base):
     is_arrears = Column(Boolean, default=False)
     advance_months = Column(Integer, default=0)
     advance_period = Column(String, nullable=True)
+    previous_balance = Column(Float, default=0.0)
+    remaining_balance = Column(Float, default=0.0)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -32,6 +35,7 @@ class JumaCollection(Base):
     __tablename__ = "juma_collections"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     contributor_type = Column(String, default="Family")  # "Family" or "Other Person"
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)
@@ -68,6 +72,7 @@ class Donation(Base):
     __tablename__ = "donations"
 
     id = Column(Integer, primary_key=True, index=True)
+    masjid_id = Column(Integer, ForeignKey("masjids.id"), nullable=True, index=True)
     contributor_type = Column(String, default="Family")  # "Family" or "Other Person"
     family_id = Column(Integer, ForeignKey("families.id"), nullable=True)
     family_code = Column(String, nullable=True)
