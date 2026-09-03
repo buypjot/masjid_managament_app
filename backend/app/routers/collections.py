@@ -304,13 +304,20 @@ async def create_santha_collection(
         date_str = datetime.now().strftime("%Y%m%d")
 
         default_rcp = f"SANT-{year_suffix}-{count + 1:02d}"
-        rcp_code = payload.receipt_no if (payload.receipt_no and payload.receipt_no.strip()) else default_rcp
+        rcp_input = getattr(payload, 'receipt_no', None)
+        rcp_code = rcp_input if (rcp_input and str(rcp_input).strip()) else default_rcp
 
-        is_adv = payload.is_advance or (payload.allocation == "Advance")
-        is_arr = payload.is_arrears or (payload.allocation == "Specific")
+        is_adv = (
+            bool(getattr(payload, 'is_advance', False)) or
+            (getattr(payload, 'allocation', '') == "Advance") or
+            (getattr(payload, 'advance_months', 0) or 0) > 0 or
+            ("advance" in str(getattr(payload, 'advance_period', '') or '').lower())
+        )
+        is_arr = bool(getattr(payload, 'is_arrears', False)) or (getattr(payload, 'allocation', '') == "Specific")
 
         default_ref = f"TXN-{date_str}-{count + 1:02d}"
-        ref_id = payload.reference_id if (payload.reference_id and payload.reference_id.strip() and not payload.reference_id.startswith("TXN-202")) else default_ref
+        ref_input = getattr(payload, 'reference_id', None)
+        ref_id = ref_input if (ref_input and str(ref_input).strip() and not str(ref_input).startswith("TXN-202")) else default_ref
 
         # Get existing family collections to calculate previous balance
         existing_cols = db.query(SanthaCollection).filter(SanthaCollection.masjid_id == masjid_id).all()
@@ -465,7 +472,12 @@ async def get_santha_advances(
     """List recorded advance Santha payments."""
     advances = db.query(SanthaCollection).filter(
         SanthaCollection.masjid_id == masjid_id,
-        (SanthaCollection.is_advance == True) | (SanthaCollection.allocation == "Advance")
+        (
+            (SanthaCollection.is_advance == True) |
+            (SanthaCollection.allocation == "Advance") |
+            (SanthaCollection.advance_months > 0) |
+            (SanthaCollection.advance_period.ilike("%advance%"))
+        )
     ).order_by(SanthaCollection.id.desc()).all()
     return [
         {
