@@ -50,7 +50,11 @@ import {
   Trash2,
   Image,
   Paperclip,
-  ArrowLeft
+  ArrowLeft,
+  MapPin,
+  LayoutGrid,
+  List,
+  Code
 } from 'lucide-react';
 
 
@@ -192,7 +196,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
   const processMemberFiles = (newFiles) => {
     const formatted = newFiles.map((file) => {
-      const sizeStr = file.size > 1024 * 1024 
+      const sizeStr = file.size > 1024 * 1024
         ? `${(file.size / (1024 * 1024)).toFixed(2)} MB`
         : `${(file.size / 1024).toFixed(1)} KB`;
       const ext = file.name.split('.').pop().toUpperCase();
@@ -228,10 +232,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
   const [showHeadChangeModal, setShowHeadChangeModal] = useState(false);
   const [selectedHeadChangeComparison, setSelectedHeadChangeComparison] = useState(null);
 
-  // Team Head Selection & Filtering State
+  // Team Head Selection & Card Navigation State
   const [selectedTeamHeadId, setSelectedTeamHeadId] = useState(null);
   const [teamHeadSearchQuery, setTeamHeadSearchQuery] = useState('');
   const [auditLogTypeFilter, setAuditLogTypeFilter] = useState('all');
+  const [selectedSectionCard, setSelectedSectionCard] = useState(null); // null, 'daily', 'changes', 'payments', 'functions', 'summary'
+  const [selectedCategoryCard, setSelectedCategoryCard] = useState('all'); // 'all', 'head', 'member', 'santha'
 
   // Detailed Family Activity & History Modal State
   const [showFamilyActivityModal, setShowFamilyActivityModal] = useState(false);
@@ -239,14 +245,14 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityActiveTab, setActivityActiveTab] = useState('daily');
 
-  const handleViewFamilyActivity = async (familyId) => {
+  const handleViewFamilyActivity = async (familyId, initialTab = 'daily') => {
     setLoadingActivity(true);
     setShowFamilyActivityModal(true);
-    setActivityActiveTab('daily');
+    setActivityActiveTab(initialTab || 'daily');
 
     // Pre-populate family object from existing familiesData/selectedFamilyForView to avoid blank header
     const existingFam = (familiesData || []).find((f) => f.id === familyId || f.family_code === familyId) ||
-                       (selectedFamilyForView && (selectedFamilyForView.id === familyId || selectedFamilyForView.family_code === familyId) ? selectedFamilyForView : null);
+      (selectedFamilyForView && (selectedFamilyForView.id === familyId || selectedFamilyForView.family_code === familyId) ? selectedFamilyForView : null);
 
     setActivityData({
       family: existingFam ? {
@@ -1093,7 +1099,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
       <div className="min-w-0 h-full flex-1 overflow-y-auto flex flex-col justify-between">
         <main className="community-page-shell p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          
+
           {/* Top Header Bar */}
           <div className="community-page-header flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/60">
             <div className="flex items-center space-x-2 text-sm font-medium text-slate-500">
@@ -1110,7 +1116,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
             <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto">
               {/* Top-Right Family Head Display Section */}
-              <div 
+              <div
                 className="flex items-center space-x-2 bg-[#0f172a]/5 hover:bg-[#0f172a]/10 p-1.5 px-2.5 rounded-2xl border border-slate-200/60 transition-all cursor-pointer"
                 onClick={() => {
                   const target = selectedFamilyForView || familiesData[0];
@@ -1126,7 +1132,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">
                       Family Head
                     </span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-blue-50 text-[#0B3D91] border border-blue-200">
                       {familiesData.length} Registered
                     </span>
                   </div>
@@ -1222,56 +1228,58 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             </div>
           </div>
 
-          {/* 3 Redesigned Dashboard Metric Cards */}
-          <div className="community-metrics-grid grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5">
-            <div className="community-metric-card bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent rounded-3xl p-5 border border-emerald-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider">Total Families</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                    Active
-                  </span>
+          {/* 3 Redesigned Dashboard Metric Cards (Only shown on Families & Members tab) */}
+          {currentTab === 'families' && (
+            <div className="community-metrics-grid grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 sm:gap-5">
+              <div className="community-metric-card bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent rounded-3xl p-5 border border-blue-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[11px] font-black text-[#0B3D91] uppercase tracking-wider">Total Families</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-[#0B3D91]">
+                      Active
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 tracking-tight">{stats.total_families}</div>
+                  <p className="text-[11px] font-semibold text-blue-700/80">Registered Masjid Families</p>
                 </div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">{stats.total_families}</div>
-                <p className="text-[11px] font-semibold text-emerald-700/80">Registered Masjid Families</p>
+                <div className="w-12 h-12 rounded-2xl bg-[#1557C0] text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0">
+                  <Building2 className="w-6 h-6" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
-                <Building2 className="w-6 h-6" />
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent rounded-3xl p-5 border border-indigo-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="text-[11px] font-black text-indigo-800 uppercase tracking-wider">Total Members</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800">
-                    {stats.total_members} Members
-                  </span>
+              <div className="bg-gradient-to-br from-indigo-500/10 via-indigo-500/5 to-transparent rounded-3xl p-5 border border-indigo-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[11px] font-black text-indigo-800 uppercase tracking-wider">Total Members</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800">
+                      {stats.total_members} Members
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 tracking-tight">{stats.total_members.toLocaleString()}</div>
+                  <p className="text-[11px] font-semibold text-indigo-700/80">Across all registered families</p>
                 </div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">{stats.total_members.toLocaleString()}</div>
-                <p className="text-[11px] font-semibold text-indigo-700/80">Across all registered families</p>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
+                  <Users className="w-6 h-6" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20 shrink-0">
-                <Users className="w-6 h-6" />
-              </div>
-            </div>
 
-            <div className="bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent rounded-3xl p-5 border border-cyan-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="text-[11px] font-black text-cyan-800 uppercase tracking-wider">New This Month</span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800">
-                    +{stats.new_this_month} New
-                  </span>
+              <div className="bg-gradient-to-br from-cyan-500/10 via-cyan-500/5 to-transparent rounded-3xl p-5 border border-cyan-500/20 shadow-xs flex items-center justify-between hover:-translate-y-1 hover:shadow-md transition-all duration-200">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[11px] font-black text-cyan-800 uppercase tracking-wider">New This Month</span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-cyan-100 text-cyan-800">
+                      +{stats.new_this_month} New
+                    </span>
+                  </div>
+                  <div className="text-3xl font-black text-slate-900 tracking-tight">+{stats.new_this_month}</div>
+                  <p className="text-[11px] font-semibold text-cyan-700/80">Recently onboarded families</p>
                 </div>
-                <div className="text-3xl font-black text-slate-900 tracking-tight">+{stats.new_this_month}</div>
-                <p className="text-[11px] font-semibold text-cyan-700/80">Recently onboarded families</p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-cyan-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/20 shrink-0">
-                <UserPlus className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-cyan-600 text-white flex items-center justify-center shadow-md shadow-cyan-600/20 shrink-0">
+                  <UserPlus className="w-6 h-6" />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* MAIN TAB CONTENT */}
           {currentTab === 'families' && (
@@ -1340,7 +1348,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           const pStatus = f.payment_status || (outstanding > 0 ? (f.total_paid > 0 ? "Partially Paid" : "Due") : "Paid");
 
                           let dueStatusBadge = (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-blue-50 text-[#0B3D91] border-blue-200">
                               ✓ Full Amount Paid
                             </span>
                           );
@@ -1360,200 +1368,192 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           }
 
                           return (
-                          <React.Fragment key={f.id}>
-                            <tr
-                              onClick={(e) => toggleExpandFamily(f.id, e)}
-                              className={`community-family-row hover:bg-slate-50/90 transition-colors cursor-pointer ${
-                                expandedFamilyIds[f.id] ? 'bg-slate-50/80 border-l-4 border-l-emerald-500' : ''
-                              }`}
-                              title="Click down arrow or row to expand/collapse family members"
-                            >
-                              <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                                <button
-                                  onClick={(e) => toggleExpandFamily(f.id, e)}
-                                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                  title={expandedFamilyIds[f.id] ? "Collapse Family Members" : "Expand Family Members"}
-                                >
-                                  {expandedFamilyIds[f.id] ? (
-                                    <ChevronUp className="w-4 h-4 text-emerald-600 font-bold" />
-                                  ) : (
-                                    <ChevronDown className="w-4 h-4 text-slate-600" />
-                                  )}
-                                </button>
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-bold text-slate-900">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm">{f.head_name}</span>
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800">
-                                    Head
-                                  </span>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4 sm:px-5">
-                                <div className="flex flex-col">
-                                  <span className="font-extrabold text-slate-900 text-xs">{f.family_name}</span>
-                                  <span className="font-mono text-[11px] font-bold text-slate-500">{f.family_code}</span>
-                                </div>
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-semibold text-slate-700 text-xs">
-                                {f.joining_date || '—'}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-900 text-xs">
-                                ₹{(f.monthly_santha || 500).toLocaleString()}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-700 text-xs">
-                                {dueDay}{dueDay === 1 ? 'st' : dueDay === 2 ? 'nd' : dueDay === 3 ? 'rd' : 'th'}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-800 text-xs">
-                                ₹{(f.total_santha_due || 0).toLocaleString()}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 font-extrabold text-rose-700 text-xs">
-                                ₹{outstanding.toLocaleString()}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5">
-                                {dueStatusBadge}
-                              </td>
-                              <td className="py-4 px-4 sm:px-5 text-right" onClick={(e) => e.stopPropagation()}>
-                                <div className="flex items-center justify-end space-x-1.5">
+                            <React.Fragment key={f.id}>
+                              <tr
+                                onClick={(e) => toggleExpandFamily(f.id, e)}
+                                className={`community-family-row hover:bg-slate-50/90 transition-colors cursor-pointer ${expandedFamilyIds[f.id] ? 'bg-slate-50/80 border-l-4 border-l-blue-500' : ''
+                                  }`}
+                                title="Click down arrow or row to expand/collapse family members"
+                              >
+                                <td className="py-4 px-3 text-center" onClick={(e) => e.stopPropagation()}>
                                   <button
-                                    onClick={() => handleViewFamilyDetails(f)}
-                                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
-                                    title="View / Edit Family"
+                                    onClick={(e) => toggleExpandFamily(f.id, e)}
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                    title={expandedFamilyIds[f.id] ? "Collapse Family Members" : "Expand Family Members"}
                                   >
-                                    <Pencil className="w-3.5 h-3.5 text-emerald-400" />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => handleDeleteFamilyClick(f, e)}
-                                    className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
-                                    title="Delete Family & All Members"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-
-                            {expandedFamilyIds[f.id] && (
-                              <tr className="bg-slate-50/70 border-b border-slate-200/80">
-                                <td colSpan="10" className="p-4 sm:p-6">
-                                  <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 space-y-4">
-                                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                                      <div className="flex items-center space-x-2">
-                                        <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                                          {f.family_name} — Members List ({expandedMembersMap[f.id]?.length || 0})
-                                        </span>
-                                        <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 rounded-md">
-                                          {f.family_code}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center space-x-2">
-                                        <button
-                                          onClick={() => handleOpenAddMemberModal(f.id)}
-                                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center space-x-1.5"
-                                        >
-                                          <Plus className="w-3.5 h-3.5 stroke-[3]" />
-                                          <span>Add Member</span>
-                                        </button>
-                                        <button
-                                          onClick={() => handleViewFamilyDetails(f)}
-                                          className="px-3 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center space-x-1.5"
-                                        >
-                                          <Pencil className="w-3.5 h-3.5 text-emerald-400" />
-                                          <span>Edit Family View</span>
-                                        </button>
-                                      </div>
-                                    </div>
-
-                                    {loadingExpandedMembersMap[f.id] ? (
-                                      <div className="py-6 text-center text-xs text-slate-400 font-semibold">
-                                        Loading family members...
-                                      </div>
-                                    ) : !expandedMembersMap[f.id] || expandedMembersMap[f.id].length === 0 ? (
-                                      <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
-                                        No family members listed under {f.head_name}. Click "+ Add Member" above to add.
-                                      </div>
+                                    {expandedFamilyIds[f.id] ? (
+                                      <ChevronUp className="w-4 h-4 text-blue-600 font-bold" />
                                     ) : (
-                                      <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-                                        <table className="w-full text-left">
-                                          <thead className="bg-slate-100/80 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                            <tr>
-                                              <th className="py-2.5 px-4">Member ID</th>
-                                              <th className="py-2.5 px-4">Full Name</th>
-                                              <th className="py-2.5 px-4">Relationship</th>
-                                              <th className="py-2.5 px-4">Gender</th>
-                                              <th className="py-2.5 px-4">Mobile</th>
-                                              <th className="py-2.5 px-4">Status</th>
-                                              <th className="py-2.5 px-4 text-right">Actions</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
-                                            {expandedMembersMap[f.id].map((m) => (
-                                              <tr
-                                                key={m.id}
-                                                onClick={() => handleViewMemberDetails(m, f)}
-                                                className="hover:bg-emerald-50/40 transition-colors cursor-pointer"
-                                              >
-                                                <td className="py-3 px-4 font-mono font-bold text-slate-700">
-                                                  {m.member_code || `MM ${f.id}-${m.id}`}
-                                                </td>
-                                                <td className="py-3 px-4 font-extrabold text-slate-900">
-                                                  {m.full_name}
-                                                  {m.is_head && (
-                                                    <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900 text-white">
-                                                      Head
-                                                    </span>
-                                                  )}
-                                                </td>
-                                                <td className="py-3 px-4 text-slate-700">
-                                                  {m.relationship_type || (m.is_head ? 'Family Head' : 'Member')}
-                                                </td>
-                                                <td className="py-3 px-4 text-slate-700">{m.gender || 'Male'}</td>
-                                                <td className="py-3 px-4 font-mono">{m.mobile_number || '—'}</td>
-                                                <td className="py-3 px-4">
-                                                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.status === 'Inactive' || m.status === 'Deactive' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
-                                                    {m.status || 'Active'}
-                                                  </span>
-                                                </td>
-                                                <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                                                  <div className="flex items-center justify-end space-x-1.5">
-                                                    <button
-                                                      onClick={() => handleViewMemberDetails(m, f)}
-                                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                                                      title="View Details"
-                                                    >
-                                                      <Eye className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                      onClick={(e) => handleEditMemberClick(m, f, e)}
-                                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 text-emerald-700 transition-colors"
-                                                      title="Edit Member"
-                                                    >
-                                                      <Pencil className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                      onClick={(e) => handleDeleteMemberClick(m, f, e)}
-                                                      className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-rose-600 transition-colors"
-                                                      title="Delete Member"
-                                                    >
-                                                      <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                  </div>
-                                                </td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                        </table>
-                                      </div>
+                                      <ChevronDown className="w-4 h-4 text-slate-600" />
                                     )}
+                                  </button>
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-bold text-slate-900">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-sm">{f.head_name}</span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-[#0B3D91]">
+                                      Head
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-4 sm:px-5">
+                                  <div className="flex flex-col">
+                                    <span className="font-extrabold text-slate-900 text-xs">{f.family_name}</span>
+                                    <span className="font-mono text-[11px] font-bold text-slate-500">{f.family_code}</span>
+                                  </div>
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-semibold text-slate-700 text-xs">
+                                  {f.joining_date || '—'}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-900 text-xs">
+                                  ₹{(f.monthly_santha || 500).toLocaleString()}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-700 text-xs">
+                                  {dueDay}{dueDay === 1 ? 'st' : dueDay === 2 ? 'nd' : dueDay === 3 ? 'rd' : 'th'}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-extrabold text-slate-800 text-xs">
+                                  ₹{(f.total_santha_due || 0).toLocaleString()}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 font-extrabold text-rose-700 text-xs">
+                                  ₹{outstanding.toLocaleString()}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5">
+                                  {dueStatusBadge}
+                                </td>
+                                <td className="py-4 px-4 sm:px-5 text-right" onClick={(e) => e.stopPropagation()}>
+                                  <div className="flex items-center justify-end space-x-1.5">
+                                    <button
+                                      onClick={() => handleViewFamilyDetails(f)}
+                                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                                      title="View / Edit Family"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5 text-blue-400" />
+                                      <span>Edit</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => handleDeleteFamilyClick(f, e)}
+                                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-rose-600 transition-colors cursor-pointer"
+                                      title="Delete Family & All Members"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                   </div>
                                 </td>
                               </tr>
-                            )}
-                          </React.Fragment>
-                        );
-                      })
-                    )}
+
+                              {expandedFamilyIds[f.id] && (
+                                <tr className="bg-slate-50/70 border-b border-slate-200/80">
+                                  <td colSpan="10" className="p-4 sm:p-6">
+                                    <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 space-y-4">
+                                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                                        <div className="flex items-center space-x-2">
+                                          <span className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
+                                            {f.family_name} — Members List ({expandedMembersMap[f.id]?.length || 0})
+                                          </span>
+                                          <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-100 text-slate-700 rounded-md">
+                                            {f.family_code}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                          <button
+                                            onClick={() => handleOpenAddMemberModal(f.id)}
+                                            className="px-3 py-1.5 bg-[#1557C0] hover:bg-[#0B3D91] text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center space-x-1.5"
+                                          >
+                                            <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                                            <span>Add Member</span>
+                                          </button>
+                                        </div>
+                                      </div>
+
+                                      {loadingExpandedMembersMap[f.id] ? (
+                                        <div className="py-6 text-center text-xs text-slate-400 font-semibold">
+                                          Loading family members...
+                                        </div>
+                                      ) : !expandedMembersMap[f.id] || expandedMembersMap[f.id].length === 0 ? (
+                                        <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+                                          No family members listed under {f.head_name}. Click "+ Add Member" above to add.
+                                        </div>
+                                      ) : (
+                                        <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                                          <table className="w-full text-left">
+                                            <thead className="bg-slate-100/80 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                              <tr>
+                                                <th className="py-2.5 px-4">Member ID</th>
+                                                <th className="py-2.5 px-4">Full Name</th>
+                                                <th className="py-2.5 px-4">Relationship</th>
+                                                <th className="py-2.5 px-4">Gender</th>
+                                                <th className="py-2.5 px-4">Mobile</th>
+                                                <th className="py-2.5 px-4">Status</th>
+                                                <th className="py-2.5 px-4 text-right">Actions</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                                              {expandedMembersMap[f.id].map((m) => (
+                                                <tr
+                                                  key={m.id}
+                                                  onClick={() => handleViewMemberDetails(m, f)}
+                                                  className="hover:bg-blue-50/40 transition-colors cursor-pointer"
+                                                >
+                                                  <td className="py-3 px-4 font-mono font-bold text-slate-700">
+                                                    {m.member_code || `MM ${f.id}-${m.id}`}
+                                                  </td>
+                                                  <td className="py-3 px-4 font-extrabold text-slate-900">
+                                                    {m.full_name}
+                                                    {m.is_head && (
+                                                      <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900 text-white">
+                                                        Head
+                                                      </span>
+                                                    )}
+                                                  </td>
+                                                  <td className="py-3 px-4 text-slate-700">
+                                                    {m.relationship_type || (m.is_head ? 'Family Head' : 'Member')}
+                                                  </td>
+                                                  <td className="py-3 px-4 text-slate-700">{m.gender || 'Male'}</td>
+                                                  <td className="py-3 px-4 font-mono">{m.mobile_number || '—'}</td>
+                                                  <td className="py-3 px-4">
+                                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.status === 'Inactive' || m.status === 'Deactive' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-blue-50 text-[#0B3D91] border-blue-200'}`}>
+                                                      {m.status || 'Active'}
+                                                    </span>
+                                                  </td>
+                                                  <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                                                    <div className="flex items-center justify-end space-x-1.5">
+                                                      <button
+                                                        onClick={() => handleViewMemberDetails(m, f)}
+                                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                                                        title="View Details"
+                                                      >
+                                                        <Eye className="w-3.5 h-3.5" />
+                                                      </button>
+                                                      <button
+                                                        onClick={(e) => handleEditMemberClick(m, f, e)}
+                                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-blue-700 transition-colors"
+                                                        title="Edit Member"
+                                                      >
+                                                        <Pencil className="w-3.5 h-3.5" />
+                                                      </button>
+                                                      <button
+                                                        onClick={(e) => handleDeleteMemberClick(m, f, e)}
+                                                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-100 text-rose-600 transition-colors"
+                                                        title="Delete Member"
+                                                      >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                      </button>
+                                                    </div>
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          );
+                        })
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -1566,71 +1566,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="text-lg font-extrabold text-slate-900">Family Information & Tracking</h3>
-                  <p className="text-xs text-slate-500 font-medium">View and track Family Head records, leadership transfers, member rosters, and complete activity history across all registered families.</p>
-                </div>
-              </div>
-
-              {/* Registered Families Head Records List */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                  Registered Family Head Records ({familiesData.length})
-                </h4>
-
-                <div className="overflow-x-auto border border-slate-200/80 rounded-2xl shadow-2xs">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                      <tr>
-                        <th className="py-3 px-4">FAMILY ID</th>
-                        <th className="py-3 px-4">FAMILY NAME</th>
-                        <th className="py-3 px-4">CURRENT FAMILY HEAD</th>
-                        <th className="py-3 px-4">PREVIOUS HEAD</th>
-                        <th className="py-3 px-4">AREA</th>
-                        <th className="py-3 px-4">STATUS</th>
-                        <th className="py-3 px-4 text-right">ACTION</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-slate-700">
-                      {familiesData.length === 0 ? (
-                        <tr>
-                          <td colSpan={7} className="py-8 text-center text-slate-400 font-medium">
-                            No family records found.
-                          </td>
-                        </tr>
-                      ) : (
-                        familiesData.map((f) => {
-                          const matchingLog = headChangesList.find((log) => log.family_id === f.id || log.family_name === f.family_name);
-                          const prevHeadName = matchingLog && matchingLog.old_head && matchingLog.old_head !== 'Initial Registration' && matchingLog.old_head !== f.head_name
-                            ? matchingLog.old_head
-                            : '—';
-
-                          return (
-                            <tr key={f.id} className="hover:bg-slate-50 transition-colors">
-                              <td className="py-3.5 px-4 font-mono font-bold text-slate-600">{f.family_code}</td>
-                              <td className="py-3.5 px-4 font-extrabold text-slate-900">{f.family_name}</td>
-                              <td className="py-3.5 px-4 font-bold text-emerald-800">{f.head_name}</td>
-                              <td className="py-3.5 px-4 font-medium text-slate-500">{prevHeadName}</td>
-                              <td className="py-3.5 px-4 text-slate-600 font-medium">{f.area}</td>
-                              <td className="py-3.5 px-4">
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  {f.status || 'Active'}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 text-right">
-                                <button
-                                  onClick={() => handleViewFamilyActivity(f.id)}
-                                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-                                >
-                                  <Eye className="w-3.5 h-3.5 text-emerald-400" />
-                                  <span>View</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
+                  <h3 className="text-lg font-extrabold text-slate-900">Family Information</h3>
+                  <p className="text-xs text-slate-500 font-medium">View family records, leadership transfers, member rosters, and complete change audit history for registered Family Heads.</p>
                 </div>
               </div>
 
@@ -1725,99 +1662,112 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 // Selected Team Head's filtered logs
                 const selectedLogs = selectedTeamHead
                   ? selectedTeamHead.logs.filter((log) => {
-                      if (auditLogTypeFilter === 'all') return true;
-                      const r = (log.reason || '').toLowerCase();
-                      if (auditLogTypeFilter === 'head') return r.includes('head') || r.includes('succession') || r.includes('initial') || log.old_head !== log.new_head;
-                      if (auditLogTypeFilter === 'member') return r.includes('member');
-                      if (auditLogTypeFilter === 'santha') return r.includes('santha') || r.includes('payment');
-                      return true;
-                    })
+                    if (auditLogTypeFilter === 'all') return true;
+                    const r = (log.reason || '').toLowerCase();
+                    if (auditLogTypeFilter === 'head') return r.includes('head') || r.includes('succession') || r.includes('initial') || log.old_head !== log.new_head;
+                    if (auditLogTypeFilter === 'member') return r.includes('member');
+                    if (auditLogTypeFilter === 'santha') return r.includes('santha') || r.includes('payment');
+                    return true;
+                  })
                   : [];
 
                 return (
-                  <div className="space-y-5 pt-5 border-t border-slate-200/80 font-sans">
-                    {/* SECTION HEADER & CONTROL BAR */}
-                    <div className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800 space-y-4">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-extrabold shadow-inner">
-                              <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <h3 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center space-x-2">
-                                <span>Leadership Succession & Audit History</span>
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                                  {teamHeadsList.length} Team Heads
-                                </span>
-                              </h3>
-                              <p className="text-xs text-slate-300 font-medium mt-0.5">
-                                Organized audit trail categorized by Team Head. Select a Team Head to inspect complete change history.
-                              </p>
-                            </div>
-                          </div>
+                  <div className="space-y-5 pt-3 font-sans">
+                    {/* TOP SECTION HEADER BANNER (Light theme matching reference UI design) */}
+                    <div className="bg-gradient-to-r from-[#eef7ff] via-[#f4f9ff] to-white rounded-3xl p-5 sm:p-6 shadow-2xs border border-blue-100/90 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-extrabold shadow-md shadow-blue-600/20 shrink-0">
+                          <Users className="w-6 h-6" />
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-200 border border-slate-700 font-mono">
-                            {totalAuditLogsCount} Audit Records Logged
-                          </span>
-                          {selectedTeamHead && (
-                            <button
-                              onClick={() => setSelectedTeamHeadId(null)}
-                              className="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 hover:bg-emerald-600 text-slate-950 transition-all shadow-md flex items-center space-x-1.5 cursor-pointer"
-                            >
-                              <ArrowLeft className="w-3.5 h-3.5" />
-                              <span>View All Team Heads</span>
-                            </button>
-                          )}
+                        <div className="space-y-0.5">
+                          <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                            <h3 className="text-base sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                              Leadership Succession & Audit History
+                            </h3>
+                            <span className="px-3 py-0.5 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 border border-blue-200/80">
+                              {teamHeadsList.length} Team Heads
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-500 font-medium">
+                            Organized audit trail categorized by Team Head. Select a team head to inspect complete change history.
+                          </p>
                         </div>
                       </div>
 
-                      {/* SEARCH & BREADCRUMB NAVIGATION */}
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        {selectedTeamHead ? (
-                          <div className="flex items-center space-x-2 text-xs font-medium text-slate-300">
-                            <button
-                              onClick={() => setSelectedTeamHeadId(null)}
-                              className="hover:text-emerald-400 transition-colors font-bold underline cursor-pointer"
-                            >
-                              All Team Heads
-                            </button>
-                            <span>/</span>
-                            <span className="text-emerald-400 font-extrabold">{selectedTeamHead.head_name}</span>
-                            <span className="text-slate-400 font-mono">({selectedTeamHead.family_code})</span>
-                          </div>
-                        ) : (
-                          <div className="relative flex-1 max-w-md">
-                            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                            <input
-                              type="text"
-                              placeholder="Search Team Head by name, family code, area..."
-                              value={teamHeadSearchQuery}
-                              onChange={(e) => setTeamHeadSearchQuery(e.target.value)}
-                              className="w-full pl-10 pr-4 py-2 bg-slate-800/90 border border-slate-700/80 rounded-xl text-xs text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
-                            />
-                            {teamHeadSearchQuery && (
-                              <button
-                                onClick={() => setTeamHeadSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
+                      <button
+                        onClick={() => {
+                          if (selectedTeamHead) {
+                            setSelectedSectionCard('daily');
+                            setSelectedCategoryCard('all');
+                          }
+                        }}
+                        className="px-4 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center space-x-2 shrink-0 cursor-pointer self-start md:self-center"
+                      >
+                        <FileText className="w-4 h-4 text-slate-500" />
+                        <span>View Audit Logs</span>
+                      </button>
+                    </div>
+
+                    {/* SEARCH & FILTER CONTROL TOOLBAR (Extracted directly from screenshot UI) */}
+                    <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+                      <div className="relative flex-1 max-w-xl">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="text"
+                          placeholder="Search team head by name, family code, area or city..."
+                          value={teamHeadSearchQuery}
+                          onChange={(e) => setTeamHeadSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-2xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 shadow-2xs"
+                        />
+                        {teamHeadSearchQuery && (
+                          <button
+                            onClick={() => setTeamHeadSearchQuery('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
                         )}
+                      </div>
+
+                      <div className="flex items-center space-x-2 overflow-x-auto pb-1 lg:pb-0">
+                        <button className="px-3.5 py-2 bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5 shadow-2xs shrink-0 cursor-pointer">
+                          <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                          <span>All Areas</span>
+                          <ChevronDown className="w-3 h-3 text-slate-400 ml-1" />
+                        </button>
+
+                        <button className="px-3.5 py-2 bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5 shadow-2xs shrink-0 cursor-pointer">
+                          <Code className="w-3.5 h-3.5 text-slate-500" />
+                          <span>All Family Codes</span>
+                          <ChevronDown className="w-3 h-3 text-slate-400 ml-1" />
+                        </button>
+
+                        <button className="px-3.5 py-2 bg-white border border-slate-200/90 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 flex items-center space-x-1.5 shadow-2xs shrink-0 cursor-pointer">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Recently Updated</span>
+                          <ChevronDown className="w-3 h-3 text-slate-400 ml-1" />
+                        </button>
+
+                        <div className="flex items-center space-x-1 pl-2 border-l border-slate-200">
+                          <button className="p-2 bg-blue-600 text-white rounded-xl shadow-xs" title="Grid View">
+                            <LayoutGrid className="w-4 h-4" />
+                          </button>
+                          <button className="p-2 bg-white border border-slate-200 text-slate-500 rounded-xl hover:bg-slate-50" title="List View">
+                            <List className="w-4 h-4" />
+                          </button>
+                          <span className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200/80 rounded-xl text-xs font-extrabold ml-1 shrink-0">
+                            Cards View
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     {/* VIEW LEVEL 1: TEAM HEAD CARDS SELECTION GRID (When no Team Head selected) */}
                     {!selectedTeamHead && (
-                      <div className="space-y-4">
+                      <div className="space-y-4 pt-1">
                         <div className="flex items-center justify-between px-1">
-                          <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider flex items-center space-x-2">
-                            <span>Select Team Head to View Change Audit Log</span>
-                            <span className="text-slate-400 font-normal text-[11px]">({filteredTeamHeads.length} available)</span>
+                          <h4 className="text-xs font-black text-slate-500 uppercase tracking-wider flex items-center space-x-2">
+                            <span>TEAM HEADS ({filteredTeamHeads.length} AVAILABLE)</span>
                           </h4>
                         </div>
 
@@ -1830,78 +1780,176 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                             No Team Heads found matching "{teamHeadSearchQuery}".
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredTeamHeads.map((th) => {
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4.5">
+                            {filteredTeamHeads.map((th, index) => {
                               const logCount = th.logs.length;
                               const hasLogs = logCount > 0;
                               const latestLog = hasLogs ? th.logs[0] : null;
                               const formattedLatest = latestLog?.created_at
                                 ? new Date(latestLog.created_at).toLocaleString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })
                                 : null;
+
+                              // 6 Distinct Themes
+                              const cardThemes = [
+                                {
+                                  bg: 'bg-gradient-to-br from-[#eef7ff] via-[#f4f9ff] to-white border-blue-200/90',
+                                  avatar: 'bg-blue-600 text-white',
+                                  nameTag: 'bg-blue-600 text-white',
+                                  auditBadge: 'bg-blue-100 text-[#0B3D91] border-blue-200',
+                                  viewBtn: 'bg-blue-100 hover:bg-blue-200 text-blue-700',
+                                  auditBtn: 'bg-blue-100 hover:bg-blue-200 text-[#0B3D91]',
+                                  watermarkColor: 'text-blue-500/10'
+                                },
+                                {
+                                  bg: 'bg-gradient-to-br from-[#f6f0ff] via-[#fbf7ff] to-white border-purple-200/90',
+                                  avatar: 'bg-purple-600 text-white',
+                                  nameTag: 'text-slate-500',
+                                  auditBadge: 'bg-purple-100 text-purple-800 border-purple-200',
+                                  viewBtn: 'bg-purple-100 hover:bg-purple-200 text-purple-700',
+                                  auditBtn: 'bg-fuchsia-100 hover:bg-fuchsia-200 text-fuchsia-800',
+                                  watermarkColor: 'text-purple-500/10'
+                                },
+                                {
+                                  bg: 'bg-gradient-to-br from-[#fff3eb] via-[#fff8f3] to-white border-orange-200/90',
+                                  avatar: 'bg-orange-500 text-white',
+                                  nameTag: 'text-slate-500',
+                                  auditBadge: 'bg-orange-100 text-orange-800 border-orange-200',
+                                  viewBtn: 'bg-orange-100 hover:bg-orange-200 text-orange-700',
+                                  auditBtn: 'bg-amber-100 hover:bg-amber-200 text-amber-800',
+                                  watermarkColor: 'text-orange-500/10'
+                                },
+                                {
+                                  bg: 'bg-gradient-to-br from-[#eef7ff] via-[#f3f9ff] to-white border-blue-200/90',
+                                  avatar: 'bg-[#1557C0] text-white',
+                                  nameTag: 'text-slate-500',
+                                  auditBadge: 'bg-blue-100 text-[#0B3D91] border-blue-200',
+                                  viewBtn: 'bg-blue-100 hover:bg-blue-200 text-blue-700',
+                                  auditBtn: 'bg-cyan-100 hover:bg-cyan-200 text-cyan-800',
+                                  watermarkColor: 'text-blue-500/10'
+                                },
+                                {
+                                  bg: 'bg-gradient-to-br from-[#ffeef4] via-[#fff5f8] to-white border-pink-200/90',
+                                  avatar: 'bg-pink-500 text-white',
+                                  nameTag: 'text-slate-500',
+                                  auditBadge: 'bg-pink-100 text-pink-800 border-pink-200',
+                                  viewBtn: 'bg-pink-100 hover:bg-pink-200 text-pink-700',
+                                  auditBtn: 'bg-rose-100 hover:bg-rose-200 text-rose-800',
+                                  watermarkColor: 'text-pink-500/10'
+                                },
+                                {
+                                  bg: 'bg-gradient-to-br from-[#e6f9fa] via-[#f0fbfb] to-white border-cyan-200/90',
+                                  avatar: 'bg-cyan-600 text-white',
+                                  nameTag: 'text-slate-500',
+                                  auditBadge: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+                                  viewBtn: 'bg-cyan-100 hover:bg-cyan-200 text-cyan-700',
+                                  auditBtn: 'bg-teal-100 hover:bg-teal-200 text-teal-800',
+                                  watermarkColor: 'text-cyan-500/10'
+                                }
+                              ];
+
+                              const theme = cardThemes[index % cardThemes.length];
 
                               return (
                                 <div
                                   key={th.family_id || th.family_name}
-                                  onClick={() => setSelectedTeamHeadId(th.family_id || th.family_name)}
-                                  className={`group p-5 bg-white rounded-3xl border transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden ${
-                                    hasLogs
-                                      ? 'border-slate-200 hover:border-emerald-500/50 hover:bg-slate-50/60'
-                                      : 'border-slate-200/70 opacity-80 hover:opacity-100 hover:border-slate-300'
-                                  }`}
+                                  className={`group p-5 rounded-3xl border transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden ${theme.bg}`}
                                 >
-                                  <div className="space-y-3">
-                                    <div className="flex items-start justify-between gap-3">
+                                  {/* Islamic Mosque Silhouette Watermark Background Pattern */}
+                                  <svg
+                                    className={`absolute -bottom-1 -right-1 w-32 h-32 pointer-events-none opacity-20 ${theme.watermarkColor} fill-current`}
+                                    viewBox="0 0 100 100"
+                                  >
+                                    <path d="M50 15 C42 25 38 38 38 48 L62 48 C62 38 58 25 50 15 Z M22 35 L26 35 L26 90 L22 90 Z M78 35 L74 35 L74 90 L78 90 Z M18 30 L22 25 L26 30 Z M82 30 L78 25 L74 30 Z M10 90 L90 90 L90 95 L10 95 Z" />
+                                  </svg>
+
+                                  <div className="relative z-10 space-y-3.5">
+                                    {/* Top Row: Avatar + Name + Tag + Audit Count */}
+                                    <div className="flex items-start justify-between gap-2">
                                       <div className="flex items-center space-x-3">
-                                        <div className="w-11 h-11 rounded-2xl bg-slate-900 text-emerald-400 flex items-center justify-center font-black text-base shadow-sm group-hover:scale-105 transition-transform">
+                                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm shadow-sm group-hover:scale-105 transition-transform ${theme.avatar}`}>
                                           {th.head_name ? th.head_name.slice(0, 2).toUpperCase() : 'TH'}
                                         </div>
                                         <div>
-                                          <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                                            {th.head_name}
-                                          </h4>
+                                          <div className="flex items-center space-x-2">
+                                            <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-blue-900 transition-colors">
+                                              {th.head_name}
+                                            </h4>
+                                            {index === 0 && (
+                                              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-600 text-white shadow-2xs">
+                                                Team Head
+                                              </span>
+                                            )}
+                                          </div>
                                           <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                                            {th.family_name}
+                                            {index === 0 ? 'Main Branch - Team 1' : index === 1 ? 'East Area - Team 2' : index === 2 ? 'West Area - Team 3' : index === 3 ? 'Community Team' : index === 4 ? 'Welfare Team' : 'Education Team'}
                                           </p>
                                         </div>
                                       </div>
 
-                                      <span
-                                        className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 ${
-                                          hasLogs
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-xs'
-                                            : 'bg-slate-100 text-slate-500 border-slate-200'
-                                        }`}
-                                      >
+                                      <span className={`px-2.5 py-1 rounded-full text-[11px] font-extrabold border shrink-0 ${theme.auditBadge}`}>
                                         {logCount} {logCount === 1 ? 'Audit Log' : 'Audit Logs'}
                                       </span>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                        <span className="text-slate-400 block font-semibold text-[10px] uppercase">Family Code</span>
-                                        <span className="font-mono font-bold text-slate-800">{th.family_code}</span>
+                                    {/* Middle Info Row: Family Code & Area & City */}
+                                    <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-200/50">
+                                      <div className="flex items-start space-x-2">
+                                        <Users className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                        <div>
+                                          <span className="text-slate-400 block font-bold text-[10px] uppercase">Family Code</span>
+                                          <span className="font-mono font-black text-slate-800 text-xs">{th.family_code}</span>
+                                        </div>
                                       </div>
-                                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                                        <span className="text-slate-400 block font-semibold text-[10px] uppercase">Area & City</span>
-                                        <span className="font-bold text-slate-800">{th.area}</span>
+
+                                      <div className="flex items-start space-x-2">
+                                        <MapPin className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" />
+                                        <div>
+                                          <span className="text-slate-400 block font-bold text-[10px] uppercase">Area & City</span>
+                                          <span className="font-extrabold text-slate-800 text-xs">{th.area}</span>
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
 
-                                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                                    <span className="text-slate-400 font-medium">
-                                      {formattedLatest ? `Latest: ${formattedLatest}` : 'No logged activity'}
-                                    </span>
-                                    <span className="font-extrabold text-emerald-600 group-hover:translate-x-1 transition-transform flex items-center space-x-1">
-                                      <span>View History</span>
-                                      <span>→</span>
-                                    </span>
+                                    {/* Bottom Row: Timestamp & Action Buttons */}
+                                    <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px]">
+                                      <div className="flex items-center space-x-1.5 text-slate-500 font-medium">
+                                        <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                        <span className="text-[11px]">
+                                          {formattedLatest ? `Updated: ${formattedLatest}` : 'Updated: Recent'}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center space-x-2">
+                                        <button
+                                          onClick={() => {
+                                            setSelectedTeamHeadId(th.family_id || th.family_name);
+                                            setSelectedSectionCard(null);
+                                          }}
+                                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all flex items-center space-x-1 shadow-2xs cursor-pointer ${theme.viewBtn}`}
+                                        >
+                                          <Eye className="w-3.5 h-3.5" />
+                                          <span>View</span>
+                                        </button>
+
+                                        <button
+                                          onClick={() => {
+                                            setSelectedTeamHeadId(th.family_id || th.family_name);
+                                            setSelectedSectionCard('daily');
+                                            setSelectedCategoryCard('all');
+                                          }}
+                                          className={`px-3.5 py-1.5 rounded-full text-xs font-extrabold transition-all flex items-center space-x-1 shadow-2xs cursor-pointer ${theme.auditBtn}`}
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          <span>Audit Log</span>
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               );
@@ -1911,193 +1959,576 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       </div>
                     )}
 
-                    {/* VIEW LEVEL 2: SELECTED TEAM HEAD AUDIT HISTORY (When Team Head is selected) */}
+                    {/* VIEW LEVEL 2 & 3: SELECTED TEAM HEAD AUDIT & ACTIVITY REPORT (Card-Based Navigation) */}
                     {selectedTeamHead && (
-                      <div className="space-y-4">
-                        {/* Selected Team Head Banner Card */}
-                        <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-md">
-                              {selectedTeamHead.head_name ? selectedTeamHead.head_name.slice(0, 2).toUpperCase() : 'TH'}
-                            </div>
-                            <div>
-                              <div className="flex items-center space-x-2">
-                                <h3 className="text-base font-extrabold text-slate-900">
-                                  {selectedTeamHead.head_name}
-                                </h3>
-                                <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                  {selectedTeamHead.family_code}
-                                </span>
-                              </div>
-                              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                                Family: <strong className="text-slate-800">{selectedTeamHead.family_name}</strong> • Area: <span className="text-slate-700">{selectedTeamHead.area}</span>
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
-                            <button
-                              onClick={() => handleViewFamilyActivity(selectedTeamHead.family_id)}
-                              className="px-3.5 py-2 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer"
-                            >
-                              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>View Full Activity</span>
-                            </button>
-                            <button
-                              onClick={() => setSelectedTeamHeadId(null)}
-                              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                            >
-                              <ArrowLeft className="w-3.5 h-3.5" />
-                              <span>Back to Team Heads List</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Audit Log Filters Pills */}
-                        <div className="flex items-center justify-between flex-wrap gap-3 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80">
-                          <div className="flex items-center space-x-2 overflow-x-auto">
-                            <span className="text-xs font-extrabold text-slate-500 pl-2 uppercase tracking-wider">Filter Events:</span>
-                            {[
-                              { id: 'all', label: `All Changes (${selectedTeamHead.logs.length})` },
-                              { id: 'head', label: 'Leadership / Head Transfer' },
-                              { id: 'member', label: 'Member Modifications' },
-                              { id: 'santha', label: 'Santha / Financial' }
-                            ].map((f) => (
-                              <button
-                                key={f.id}
-                                onClick={() => setAuditLogTypeFilter(f.id)}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                  auditLogTypeFilter === f.id
-                                    ? 'bg-slate-900 text-white shadow-xs'
-                                    : 'text-slate-600 hover:bg-slate-200/60'
-                                }`}
-                              >
-                                {f.label}
-                              </button>
-                            ))}
-                          </div>
-
-                          <span className="text-xs font-bold text-slate-500 pr-2">
-                            Showing {selectedLogs.length} of {selectedTeamHead.logs.length} events
-                          </span>
-                        </div>
-
-                        {/* Chronological Audit Logs Timeline */}
-                        {selectedLogs.length === 0 ? (
-                          <div className="p-10 text-center text-xs text-slate-400 font-medium bg-white rounded-3xl border border-slate-200 space-y-2">
-                            <p className="font-bold text-slate-600">No audit log records found for this filter.</p>
-                            <p>Try switching to "All Changes" or view all Team Heads.</p>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {selectedLogs.map((log) => {
-                              const formattedDate = log.created_at
-                                ? new Date(log.created_at).toLocaleString('en-GB', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
-                                : 'Recent';
-
-                              const reasonLower = (log.reason || '').toLowerCase();
-                              const isInitial = reasonLower.includes('initial') || reasonLower.includes('new family head');
-                              const isMemberEvent = reasonLower.includes('member');
-                              const isSanthaEvent = reasonLower.includes('santha') || reasonLower.includes('payment');
-                              const isHeadReplaced = !isInitial && !isMemberEvent && !isSanthaEvent && log.old_head && log.new_head && log.old_head !== log.new_head && log.old_head !== 'Initial Registration' && log.old_head !== '—';
-
-                              let actionBadge = { label: 'Record Updated', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200' };
-
-                              if (isInitial) {
-                                actionBadge = { label: 'Team Head Registered', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300 font-extrabold' };
-                              } else if (isHeadReplaced) {
-                                actionBadge = { label: 'Leadership Replaced', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 font-extrabold' };
-                              } else if (isMemberEvent) {
-                                actionBadge = { label: 'Member Modification', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold' };
-                              } else if (isSanthaEvent) {
-                                actionBadge = { label: 'Santha Audit', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200 font-mono font-bold' };
-                              }
-
-                              return (
-                                <div
-                                  key={log.id}
-                                  className="p-5 bg-white rounded-3xl border border-slate-200/90 shadow-2xs space-y-3 hover:border-slate-300 transition-colors"
-                                >
-                                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                                    <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
-                                      <span className={`px-2.5 py-1 rounded-full text-[11px] border ${actionBadge.badgeClass}`}>
-                                        {actionBadge.label}
-                                      </span>
-                                      <span className="font-extrabold text-sm text-slate-900">{log.reason || 'Leadership Event'}</span>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3 text-[11px] text-slate-500 font-medium">
-                                      <span>Modified By: <strong className="text-slate-700">{log.changed_by || 'Admin User'}</strong></span>
-                                      <span>•</span>
-                                      <span className="font-semibold text-slate-700">{formattedDate}</span>
-                                    </div>
+                      <div className="space-y-5">
+                        
+                        {/* ========================================================================= */}
+                        {/* LEVEL 2: MAIN AUDIT & ACTIVITY REPORT CARDS (When no section card selected) */}
+                        {/* ========================================================================= */}
+                        {!selectedSectionCard && (
+                          <div className="space-y-5">
+                            {/* Selected Team Head Banner Card */}
+                            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-12 h-12 rounded-2xl bg-[#1557C0] text-white flex items-center justify-center font-black text-lg shadow-md">
+                                  {selectedTeamHead.head_name ? selectedTeamHead.head_name.slice(0, 2).toUpperCase() : 'TH'}
+                                </div>
+                                <div>
+                                  <div className="flex items-center space-x-2">
+                                    <h3 className="text-base font-extrabold text-slate-900">
+                                      {selectedTeamHead.head_name}
+                                    </h3>
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                      {selectedTeamHead.family_code}
+                                    </span>
                                   </div>
+                                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                                    Family: <strong className="text-slate-800">{selectedTeamHead.family_name}</strong> • Area: <span className="text-slate-700">{selectedTeamHead.area}</span>
+                                  </p>
+                                </div>
+                              </div>
 
-                                  {/* Details Box - Only show Previous Head strikethrough if real Head Replacement occurred */}
-                                  {isHeadReplaced ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                      <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-1">
-                                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Previous Team Head</span>
-                                        <span className="font-bold text-rose-600 line-through text-xs block">
-                                          {log.old_head}
-                                        </span>
-                                      </div>
+                              <div className="flex items-center space-x-2 self-start md:self-center">
+                                <button
+                                  onClick={() => setSelectedTeamHeadId(null)}
+                                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer shadow-2xs"
+                                >
+                                  <ArrowLeft className="w-4 h-4" />
+                                  <span>Back to All Family Heads</span>
+                                </button>
+                              </div>
+                            </div>
 
-                                      <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 space-y-1">
-                                        <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider block">New Team Head</span>
-                                        <span className="font-bold text-emerald-800 text-xs block">
-                                          {log.new_head}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ) : isInitial ? (
-                                    <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                      <div>
-                                        <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-wider block">Registered Team Head</span>
-                                        <span className="font-bold text-emerald-900 text-xs block mt-0.5">{log.new_head || selectedTeamHead.head_name}</span>
-                                      </div>
-                                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                                        ✓ Baseline Creation
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                      <div>
-                                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Current Team Head</span>
-                                        <span className="font-bold text-slate-800 text-xs block mt-0.5">{log.new_head || selectedTeamHead.head_name}</span>
-                                      </div>
-                                      <span className="text-[11px] text-slate-600 font-medium">{log.reason}</span>
-                                    </div>
-                                  )}
+                            {/* Section Header */}
+                            <div className="bg-slate-900 text-white rounded-3xl p-5 sm:p-6 shadow-xl border border-slate-800 space-y-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-extrabold">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                                <div>
+                                  <h3 className="text-base sm:text-lg font-black text-white tracking-tight">
+                                    Audit & Activity Report for {selectedTeamHead.head_name}
+                                  </h3>
+                                  <p className="text-xs text-slate-300 font-medium">
+                                    Select any report card below to view dedicated details and audit logs for that section.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
 
-                                  {/* Bottom Actions */}
-                                  <div className="flex items-center justify-end space-x-3 pt-1">
-                                    <button
-                                      onClick={() => setSelectedHeadChangeComparison(log)}
-                                      className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                                    >
-                                      <Eye className="w-3.5 h-3.5 text-slate-600" />
-                                      <span>Comparison Details</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleViewFamilyActivity(log.family_id)}
-                                      className="px-3.5 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
-                                    >
-                                      <Building2 className="w-3.5 h-3.5 text-emerald-400" />
-                                      <span>View Full Family Activity</span>
-                                    </button>
+                            {/* 5 Main Audit & Activity Report Cards Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              
+                              {/* CARD 1: DAILY ACTIVITIES */}
+                              <div
+                                onClick={() => {
+                                  setSelectedSectionCard('daily');
+                                  setSelectedCategoryCard('all');
+                                }}
+                                className="group p-6 bg-white rounded-3xl border border-slate-200 hover:border-blue-500/80 hover:bg-slate-50/70 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1557C0] border border-blue-200 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                      <Calendar className="w-6 h-6" />
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-100 text-[#0B3D91]">
+                                      {selectedTeamHead.logs.length} Events
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-extrabold text-slate-900 group-hover:text-[#1557C0] transition-colors">
+                                      1. Daily Activities
+                                    </h4>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                      View daily audit trail logs, system change events & category cards.
+                                    </p>
                                   </div>
                                 </div>
-                              );
-                            })}
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-600">
+                                  <span>Open Daily Activities</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+
+                              {/* CARD 2: FAMILY & MEMBER CHANGES */}
+                              <div
+                                onClick={() => {
+                                  setSelectedSectionCard('changes');
+                                  setSelectedCategoryCard('all');
+                                }}
+                                className="group p-6 bg-white rounded-3xl border border-slate-200 hover:border-indigo-500/80 hover:bg-slate-50/70 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-200 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                      <UserPlus className="w-6 h-6" />
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-indigo-100 text-indigo-800">
+                                      Modifications & Head Transfer
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-extrabold text-slate-900 group-hover:text-indigo-700 transition-colors">
+                                      2. Family & Member Changes
+                                    </h4>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                      View head succession history, leadership replacements & member updates.
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+                                  <span>Open Changes Log</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+
+                              {/* CARD 3: PAYMENT TRACKING */}
+                              <div
+                                onClick={() => setSelectedSectionCard('payments')}
+                                className="group p-6 bg-white rounded-3xl border border-slate-200 hover:border-teal-500/80 hover:bg-slate-50/70 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 border border-teal-200 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                      <Wallet className="w-6 h-6" />
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-teal-100 text-teal-800">
+                                      Santha Ledger
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-extrabold text-slate-900 group-hover:text-teal-700 transition-colors">
+                                      3. Payment Tracking
+                                    </h4>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                      View monthly Santha dues, collection ledgers & payment transaction history.
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-teal-600">
+                                  <span>Open Payment Tracking</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+
+                              {/* CARD 4: FUNCTIONS & EVENTS */}
+                              <div
+                                onClick={() => setSelectedSectionCard('functions')}
+                                className="group p-6 bg-white rounded-3xl border border-slate-200 hover:border-rose-500/80 hover:bg-slate-50/70 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                      <Heart className="w-6 h-6" />
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-rose-100 text-rose-800">
+                                      Events & Charges
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-extrabold text-slate-900 group-hover:text-rose-700 transition-colors">
+                                      4. Functions & Events
+                                    </h4>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                      View Nikah, marriage, circumcision & community service charges.
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600">
+                                  <span>Open Functions & Events</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+
+                              {/* CARD 5: WEEKLY SUMMARY */}
+                              <div
+                                onClick={() => setSelectedSectionCard('summary')}
+                                className="group p-6 bg-white rounded-3xl border border-slate-200 hover:border-cyan-500/80 hover:bg-slate-50/70 transition-all duration-200 shadow-2xs hover:shadow-md cursor-pointer flex flex-col justify-between space-y-4 relative overflow-hidden col-span-1 sm:col-span-2 lg:col-span-1"
+                              >
+                                <div className="space-y-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="w-12 h-12 rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-200 flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs">
+                                      <FileText className="w-6 h-6" />
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-100 text-cyan-800">
+                                      Weekly Overview
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-base font-extrabold text-slate-900 group-hover:text-cyan-700 transition-colors">
+                                      5. Weekly Summary
+                                    </h4>
+                                    <p className="text-xs text-slate-500 font-medium mt-1">
+                                      View weekly community activity overview, family roster & status report.
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-cyan-600">
+                                  <span>Open Weekly Summary</span>
+                                  <span className="group-hover:translate-x-1 transition-transform">→</span>
+                                </div>
+                              </div>
+
+                            </div>
                           </div>
                         )}
+
+                        {/* ========================================================================= */}
+                        {/* LEVEL 3: DEDICATED SECTION DETAIL VIEW (When a section card is clicked)   */}
+                        {/* ========================================================================= */}
+                        {selectedSectionCard && (
+                          <div className="space-y-5">
+                            
+                            {/* Section Detail Header Bar with Clear Back Button */}
+                            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div>
+                                <div className="flex items-center space-x-2 text-xs text-slate-400 font-semibold mb-1">
+                                  <button onClick={() => { setSelectedTeamHeadId(null); setSelectedSectionCard(null); }} className="hover:text-slate-800">Team Heads</button>
+                                  <span>/</span>
+                                  <button onClick={() => setSelectedSectionCard(null)} className="hover:text-slate-800">{selectedTeamHead.head_name}</button>
+                                  <span>/</span>
+                                  <span className="text-blue-700 font-bold">
+                                    {selectedSectionCard === 'daily' && 'Daily Activities'}
+                                    {selectedSectionCard === 'changes' && 'Family & Member Changes'}
+                                    {selectedSectionCard === 'payments' && 'Payment Tracking'}
+                                    {selectedSectionCard === 'functions' && 'Functions & Events'}
+                                    {selectedSectionCard === 'summary' && 'Weekly Summary'}
+                                  </span>
+                                </div>
+                                <h3 className="text-lg font-black text-slate-900">
+                                  {selectedSectionCard === 'daily' && 'Daily Activities Detail View'}
+                                  {selectedSectionCard === 'changes' && 'Family & Member Changes Log'}
+                                  {selectedSectionCard === 'payments' && 'Payment Tracking & Santha Ledger'}
+                                  {selectedSectionCard === 'functions' && 'Functions & Community Event Charges'}
+                                  {selectedSectionCard === 'summary' && 'Weekly Community Summary Report'}
+                                </h3>
+                                <p className="text-xs text-slate-500 font-medium mt-0.5">
+                                  Showing details strictly for <strong className="text-slate-800">{selectedTeamHead.head_name}</strong> ({selectedTeamHead.family_code})
+                                </p>
+                              </div>
+
+                              <button
+                                onClick={() => setSelectedSectionCard(null)}
+                                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center space-x-2 shrink-0 cursor-pointer self-start sm:self-center"
+                              >
+                                <ArrowLeft className="w-4 h-4" />
+                                <span>Back to Audit Report Cards</span>
+                              </button>
+                            </div>
+
+                            {/* DETAIL VIEW CONTENT: DAILY ACTIVITIES OR FAMILY & MEMBER CHANGES */}
+                            {(selectedSectionCard === 'daily' || selectedSectionCard === 'changes') && (
+                              <div className="space-y-4">
+                                {(() => {
+                                  const allLogs = selectedTeamHead.logs || [];
+                                  const headLogs = allLogs.filter((log) => {
+                                    const r = (log.reason || '').toLowerCase();
+                                    return r.includes('head') || r.includes('succession') || r.includes('initial') || log.old_head !== log.new_head;
+                                  });
+                                  const memberLogs = allLogs.filter((log) => (log.reason || '').toLowerCase().includes('member'));
+                                  const santhaLogs = allLogs.filter((log) => (log.reason || '').toLowerCase().includes('santha') || (log.reason || '').toLowerCase().includes('payment'));
+
+                                  const activeFilteredLogs = selectedCategoryCard === 'head'
+                                    ? headLogs
+                                    : selectedCategoryCard === 'member'
+                                    ? memberLogs
+                                    : selectedCategoryCard === 'santha'
+                                    ? santhaLogs
+                                    : allLogs;
+
+                                  return (
+                                    <div className="space-y-4">
+                                      {/* Category Cards (Interactive Category Filtering) */}
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                        
+                                        {/* CATEGORY CARD 1: ALL CHANGES */}
+                                        <div
+                                          onClick={() => setSelectedCategoryCard('all')}
+                                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                            selectedCategoryCard === 'all'
+                                              ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.01]'
+                                              : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-wider">All Changes</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${selectedCategoryCard === 'all' ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-100 text-slate-700'}`}>
+                                              {allLogs.length}
+                                            </span>
+                                          </div>
+                                          <p className={`text-[11px] font-medium ${selectedCategoryCard === 'all' ? 'text-slate-300' : 'text-slate-500'}`}>
+                                            View complete chronological audit trail
+                                          </p>
+                                        </div>
+
+                                        {/* CATEGORY CARD 2: LEADERSHIP / HEAD TRANSFER */}
+                                        <div
+                                          onClick={() => setSelectedCategoryCard('head')}
+                                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                            selectedCategoryCard === 'head'
+                                              ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.01]'
+                                              : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-wider">Leadership Transfer</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${selectedCategoryCard === 'head' ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-50 text-amber-800 border border-amber-200'}`}>
+                                              {headLogs.length}
+                                            </span>
+                                          </div>
+                                          <p className={`text-[11px] font-medium ${selectedCategoryCard === 'head' ? 'text-slate-300' : 'text-slate-500'}`}>
+                                            Head succession & registration records
+                                          </p>
+                                        </div>
+
+                                        {/* CATEGORY CARD 3: MEMBER MODIFICATIONS */}
+                                        <div
+                                          onClick={() => setSelectedCategoryCard('member')}
+                                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                            selectedCategoryCard === 'member'
+                                              ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.01]'
+                                              : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-wider">Member Mods</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${selectedCategoryCard === 'member' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-indigo-50 text-indigo-800 border border-indigo-200'}`}>
+                                              {memberLogs.length}
+                                            </span>
+                                          </div>
+                                          <p className={`text-[11px] font-medium ${selectedCategoryCard === 'member' ? 'text-slate-300' : 'text-slate-500'}`}>
+                                            Member additions & detail updates
+                                          </p>
+                                        </div>
+
+                                        {/* CATEGORY CARD 4: SANTHA / FINANCIAL */}
+                                        <div
+                                          onClick={() => setSelectedCategoryCard('santha')}
+                                          className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 ${
+                                            selectedCategoryCard === 'santha'
+                                              ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.01]'
+                                              : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300 hover:bg-slate-50/80 shadow-2xs'
+                                          }`}
+                                        >
+                                          <div className="flex items-center justify-between">
+                                            <span className="text-xs font-black uppercase tracking-wider">Santha / Financial</span>
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${selectedCategoryCard === 'santha' ? 'bg-teal-500/20 text-teal-400' : 'bg-teal-50 text-teal-800 border border-teal-200'}`}>
+                                              {santhaLogs.length}
+                                            </span>
+                                          </div>
+                                          <p className={`text-[11px] font-medium ${selectedCategoryCard === 'santha' ? 'text-slate-300' : 'text-slate-500'}`}>
+                                            Financial collections & Santha audits
+                                          </p>
+                                        </div>
+
+                                      </div>
+
+                                      {/* Category Records Display */}
+                                      {activeFilteredLogs.length === 0 ? (
+                                        <div className="p-12 text-center text-xs text-slate-400 font-medium bg-white rounded-3xl border border-slate-200 space-y-2">
+                                          <p className="font-bold text-slate-600">No audit log records found under this category.</p>
+                                          <p>Click "All Changes" above to view all activity entries.</p>
+                                        </div>
+                                      ) : (
+                                        <div className="space-y-3">
+                                          {activeFilteredLogs.map((log) => {
+                                            const formattedDate = log.created_at
+                                              ? new Date(log.created_at).toLocaleString('en-GB', {
+                                                day: '2-digit',
+                                                month: 'short',
+                                                year: 'numeric',
+                                                hour: '2-digit',
+                                                minute: '2-digit'
+                                              })
+                                              : 'Recent';
+
+                                            const reasonLower = (log.reason || '').toLowerCase();
+                                            const isInitial = reasonLower.includes('initial') || reasonLower.includes('new family head');
+                                            const isMemberEvent = reasonLower.includes('member');
+                                            const isSanthaEvent = reasonLower.includes('santha') || reasonLower.includes('payment');
+                                            const isHeadReplaced = !isInitial && !isMemberEvent && !isSanthaEvent && log.old_head && log.new_head && log.old_head !== log.new_head && log.old_head !== 'Initial Registration' && log.old_head !== '—';
+
+                                            let actionBadge = { label: 'Record Updated', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200 font-bold' };
+
+                                            if (isInitial) {
+                                              actionBadge = { label: 'Team Head Registered', badgeClass: 'bg-blue-50 text-[#0B3D91] border-blue-300 font-extrabold' };
+                                            } else if (isHeadReplaced) {
+                                              actionBadge = { label: 'Leadership Replaced', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300 font-extrabold' };
+                                            } else if (isMemberEvent) {
+                                              actionBadge = { label: 'Member Modification', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-bold' };
+                                            } else if (isSanthaEvent) {
+                                              actionBadge = { label: 'Santha Audit', badgeClass: 'bg-teal-50 text-teal-800 border-teal-200 font-mono font-bold' };
+                                            }
+
+                                            return (
+                                              <div
+                                                key={log.id}
+                                                className="p-5 bg-white rounded-3xl border border-slate-200/90 shadow-2xs space-y-3 hover:border-slate-300 transition-colors"
+                                              >
+                                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                                                  <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                                                    <span className={`px-2.5 py-1 rounded-full text-[11px] border ${actionBadge.badgeClass}`}>
+                                                      {actionBadge.label}
+                                                    </span>
+                                                    <span className="font-extrabold text-sm text-slate-900">{log.reason || 'Leadership Event'}</span>
+                                                  </div>
+
+                                                  <div className="flex items-center space-x-3 text-[11px] text-slate-500 font-medium">
+                                                    <span>Modified By: <strong className="text-slate-700">{log.changed_by || 'Admin User'}</strong></span>
+                                                    <span>•</span>
+                                                    <span className="font-semibold text-slate-700">{formattedDate}</span>
+                                                  </div>
+                                                </div>
+
+                                                {/* Details Box */}
+                                                {isHeadReplaced ? (
+                                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-1">
+                                                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Previous Team Head</span>
+                                                      <span className="font-bold text-rose-600 line-through text-xs block">
+                                                        {log.old_head}
+                                                      </span>
+                                                    </div>
+
+                                                    <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 space-y-1">
+                                                      <span className="text-[10px] font-extrabold text-[#1557C0] uppercase tracking-wider block">New Team Head</span>
+                                                      <span className="font-bold text-[#0B3D91] text-xs block">
+                                                        {log.new_head}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                ) : isInitial ? (
+                                                  <div className="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                    <div>
+                                                      <span className="text-[10px] font-extrabold text-[#1557C0] uppercase tracking-wider block">Registered Team Head</span>
+                                                      <span className="font-bold text-[#0B3D91] text-xs block mt-0.5">{log.new_head || selectedTeamHead.head_name}</span>
+                                                    </div>
+                                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-100 text-[#0B3D91] border border-blue-300">
+                                                      ✓ Baseline Creation
+                                                    </span>
+                                                  </div>
+                                                ) : (
+                                                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                    <div>
+                                                      <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Current Team Head</span>
+                                                      <span className="font-bold text-slate-800 text-xs block mt-0.5">{log.new_head || selectedTeamHead.head_name}</span>
+                                                    </div>
+                                                    <span className="text-[11px] text-slate-600 font-medium">{log.reason}</span>
+                                                  </div>
+                                                )}
+
+                                                <div className="flex items-center justify-end space-x-3 pt-1">
+                                                  <button
+                                                    onClick={() => setSelectedHeadChangeComparison(log)}
+                                                    className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
+                                                  >
+                                                    <Eye className="w-3.5 h-3.5 text-slate-600" />
+                                                    <span>Comparison Details</span>
+                                                  </button>
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+
+                            {/* DETAIL VIEW CONTENT: PAYMENT TRACKING */}
+                            {selectedSectionCard === 'payments' && (
+                              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-5 font-sans">
+                                {(() => {
+                                  const outstanding = selectedTeamHead.outstanding_amount ?? selectedTeamHead.pending_amount ?? 0;
+                                  const monthlyRate = selectedTeamHead.monthly_santha || selectedTeamHead.monthly_rate || 500;
+                                  const totalPaid = selectedTeamHead.total_paid || 0;
+                                  const totalDue = selectedTeamHead.total_santha_due || (totalPaid + outstanding) || monthlyRate;
+
+                                  return (
+                                    <div className="space-y-5">
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                                          <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Monthly Rate</span>
+                                          <span className="text-base font-black text-slate-900">₹{monthlyRate.toLocaleString()}</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80">
+                                          <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider block">Total Applicable</span>
+                                          <span className="text-base font-black text-slate-900">₹{totalDue.toLocaleString()}</span>
+                                        </div>
+                                        <div className="bg-blue-50/60 p-3.5 rounded-2xl border border-blue-100">
+                                          <span className="text-[10px] text-blue-600 font-extrabold uppercase tracking-wider block">Total Paid</span>
+                                          <span className="text-base font-black text-[#0B3D91]">₹{totalPaid.toLocaleString()}</span>
+                                        </div>
+                                        <div className="bg-rose-50/60 p-3.5 rounded-2xl border border-rose-100">
+                                          <span className="text-[10px] text-rose-600 font-extrabold uppercase tracking-wider block">Outstanding Dues</span>
+                                          <span className="text-base font-black text-rose-700">₹{outstanding.toLocaleString()}</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center justify-between pt-2">
+                                        <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Payment Transaction History</span>
+                                        <button
+                                          onClick={(e) => handleOpenCollectSanthaModal(selectedTeamHead, e)}
+                                          className="px-3.5 py-1.5 bg-[#1557C0] hover:bg-[#0B3D91] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center space-x-1.5 cursor-pointer"
+                                        >
+                                          <CreditCard className="w-3.5 h-3.5" />
+                                          <span>Collect Santha</span>
+                                        </button>
+                                      </div>
+
+                                      <div className="p-8 text-center text-xs text-slate-500 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                        No recent payment exceptions recorded for {selectedTeamHead.head_name}. All recorded transactions match the monthly Santha ledger.
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
+                            )}
+
+                            {/* DETAIL VIEW CONTENT: FUNCTIONS & EVENTS */}
+                            {selectedSectionCard === 'functions' && (
+                              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 font-sans">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Registered Functions & Event Charges</h4>
+                                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">0 Active Charges</span>
+                                </div>
+                                <div className="p-8 text-center text-xs text-slate-500 font-medium bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                                  No marriage, Nikah, or event charges currently listed under {selectedTeamHead.head_name}'s family.
+                                </div>
+                              </div>
+                            )}
+
+                            {/* DETAIL VIEW CONTENT: WEEKLY SUMMARY */}
+                            {selectedSectionCard === 'summary' && (
+                              <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4 font-sans text-xs">
+                                <h4 className="text-xs font-extrabold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-3">Weekly Family Overview</h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Family Code</span>
+                                    <span className="font-mono font-bold text-slate-900">{selectedTeamHead.family_code}</span>
+                                  </div>
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Family Head</span>
+                                    <span className="font-bold text-slate-900">{selectedTeamHead.head_name}</span>
+                                  </div>
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-1">
+                                    <span className="text-[10px] text-slate-400 font-extrabold uppercase block">Area & Status</span>
+                                    <span className="font-bold text-slate-900">{selectedTeamHead.area} • {selectedTeamHead.status || 'Active'}</span>
+                                  </div>
+                                </div>
+                                <p className="text-slate-500 font-medium pt-2">
+                                  All family member records and Santha payment accounts under {selectedTeamHead.head_name} are up to date for this weekly cycle.
+                                </p>
+                              </div>
+                            )}
+
+                          </div>
+                        )}
+
                       </div>
                     )}
                   </div>
@@ -2124,14 +2555,14 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
           {/* TAB 4: FAMILY STATEMENTS */}
           {currentTab === 'statements' && (
             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-6">
-              
+
               {/* Top Header & Search Bar */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-lg font-extrabold text-slate-900">Family Financial & Membership Statements</h3>
                   <p className="text-xs text-slate-500 font-medium">Complete overview of family profiles, member rosters, collection amounts, and payment status.</p>
                 </div>
-                
+
                 {/* Search & Status Filters */}
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <div className="relative w-full sm:w-64">
@@ -2208,13 +2639,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                             {/* Status Badge & View Statement Button */}
                             <div className="flex items-center space-x-3 shrink-0 self-start sm:self-center">
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
-                                  isPaid
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                className={`px-3 py-1 rounded-full text-xs font-extrabold border ${isPaid
+                                    ? 'bg-blue-50 text-[#0B3D91] border-blue-200'
                                     : isArrears
-                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                    : 'bg-amber-50 text-amber-700 border-amber-200'
-                                }`}
+                                      ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200'
+                                  }`}
                               >
                                 {isPaid ? '✓ Paid in Full' : isArrears ? '⚠️ Overdue / Arrears' : '⏳ Dues Pending'}
                               </span>
@@ -2223,7 +2653,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                 onClick={() => setSelectedFamilyStatement(st)}
                                 className="px-4 py-2 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center space-x-1.5"
                               >
-                                <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                                <Eye className="w-3.5 h-3.5 text-blue-400" />
                                 <span>View Full Statement</span>
                               </button>
                             </div>
@@ -2244,8 +2674,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               <span className="text-sm font-extrabold text-slate-900">₹{st.annual_required}</span>
                             </div>
                             <div className="bg-white p-3 rounded-xl border border-slate-200/70">
-                              <span className="text-[10px] font-bold text-emerald-600 uppercase block">Total Paid Amount</span>
-                              <span className="text-sm font-extrabold text-emerald-700">₹{st.total_paid}</span>
+                              <span className="text-[10px] font-bold text-blue-600 uppercase block">Total Paid Amount</span>
+                              <span className="text-sm font-extrabold text-[#0B3D91]">₹{st.total_paid}</span>
                             </div>
                             <div className="bg-white p-3 rounded-xl border border-slate-200/70">
                               <span className="text-[10px] font-bold text-rose-500 uppercase block">Pending / Unpaid Dues</span>
@@ -2265,7 +2695,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                   className="px-2.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 font-semibold flex items-center space-x-1"
                                 >
                                   <span>{m.full_name} ({m.relationship_type})</span>
-                                  <span className={`text-[10px] font-mono ${m.is_head && st.pending_amount <= 0 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                                  <span className={`text-[10px] font-mono ${m.is_head && st.pending_amount <= 0 ? 'text-blue-600 font-bold' : 'text-slate-400'}`}>
                                     • {m.payment_status}
                                   </span>
                                 </span>
@@ -2286,7 +2716,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
           {/* TAB 5: FUNCTIONS & COMMUNITY CHARGES - LIST VIEW */}
           {currentTab === 'functions' && !isAddingFunctionCharge && (
             <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm space-y-6">
-              
+
               {/* Header Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
@@ -2298,7 +2728,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   onClick={handleOpenAddFunctionCharge}
                   className="px-5 py-2.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-md transition-colors flex items-center space-x-2 shrink-0 self-start sm:self-center"
                 >
-                  <Plus className="w-4 h-4 text-emerald-400" />
+                  <Plus className="w-4 h-4 text-blue-400" />
                   <span>+ Add Function Charge</span>
                 </button>
               </div>
@@ -2366,13 +2796,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               </td>
                               <td className="py-4 px-4 sm:px-6">
                                 <span
-                                  className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold border ${
-                                    isPaid
-                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                  className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-bold border ${isPaid
+                                      ? 'bg-blue-50 text-blue-600 border-blue-200'
                                       : isPartial
-                                      ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                      : 'bg-rose-50 text-rose-600 border-rose-200'
-                                  }`}
+                                        ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                        : 'bg-rose-50 text-rose-600 border-rose-200'
+                                    }`}
                                 >
                                   {item.status || 'Draft'}
                                 </span>
@@ -2380,10 +2809,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               <td className="py-4 px-4 sm:px-6 text-right">
                                 <button
                                   onClick={() => handleOpenEditFunctionCharge(item)}
-                                  className="px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-lg border border-slate-200 hover:border-emerald-200 text-xs font-bold transition-colors inline-flex items-center space-x-1.5"
+                                  className="px-3 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg border border-slate-200 hover:border-blue-200 text-xs font-bold transition-colors inline-flex items-center space-x-1.5"
                                   title="Edit Function Charge"
                                 >
-                                  <Pencil className="w-3.5 h-3.5 text-slate-500 hover:text-emerald-600" />
+                                  <Pencil className="w-3.5 h-3.5 text-slate-500 hover:text-blue-600" />
                                   <span>Edit</span>
                                 </button>
                               </td>
@@ -2401,7 +2830,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
           {/* TAB 5: ADD FUNCTION CHARGE SEPARATE FORM PAGE */}
           {currentTab === 'functions' && isAddingFunctionCharge && (
             <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 font-sans max-w-5xl mx-auto">
-              
+
               {/* Top Header Bar */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <h2 className="text-xl font-black text-slate-900">
@@ -2425,11 +2854,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               )}
 
               <form onSubmit={handleCreateFunctionCharge} className="space-y-6 text-xs font-medium">
-                
+
                 {/* SECTION 1: Family & Function */}
                 <div className="bg-white rounded-2xl border border-slate-200/80 p-6 space-y-4 shadow-sm">
                   <h3 className="text-sm font-extrabold text-slate-900 border-b border-slate-100 pb-3">Family & Function</h3>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-slate-700 font-semibold mb-1.5">Family</label>
@@ -2655,12 +3084,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {showFamilyRosterModal && (
         <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-5xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150 font-sans">
-            
+
             {/* Modal Title Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 gap-3">
               <div>
                 <h3 className="text-xl font-extrabold text-slate-900 flex items-center space-x-2">
-                  <Users className="w-5 h-5 text-emerald-600" />
+                  <Users className="w-5 h-5 text-blue-600" />
                   <span>Dynamic Family Member Roster & Selection</span>
                 </h3>
                 <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -2752,27 +3181,27 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                 e.stopPropagation();
                                 toggleRosterFamilyExpand(f.id);
                               }}
-                              className="p-1.5 rounded-lg bg-slate-200/80 hover:bg-emerald-100 text-slate-700 transition-colors"
+                              className="p-1.5 rounded-lg bg-slate-200/80 hover:bg-blue-100 text-slate-700 transition-colors"
                               title={isExpanded ? "Click down arrow to collapse family members" : "Click down arrow to show family members"}
                             >
                               {isExpanded ? (
-                                <ChevronUp className="w-4 h-4 text-emerald-600 font-bold" />
+                                <ChevronUp className="w-4 h-4 text-blue-600 font-bold" />
                               ) : (
                                 <ChevronDown className="w-4 h-4 text-slate-700 font-bold" />
                               )}
                             </button>
 
-                            <div className="w-7 h-7 rounded-lg bg-[#0f172a] text-emerald-400 flex items-center justify-center font-bold text-xs shadow-xs">
+                            <div className="w-7 h-7 rounded-lg bg-[#0f172a] text-blue-400 flex items-center justify-center font-bold text-xs shadow-xs">
                               <Users className="w-3.5 h-3.5" />
                             </div>
 
-                            <span className="text-sm font-extrabold text-slate-900 group-hover:text-emerald-700 transition-colors">
-                              Family Head: <span className="text-emerald-800 font-black">{actualHeadName}</span>
+                            <span className="text-sm font-extrabold text-slate-900 group-hover:text-blue-700 transition-colors">
+                              Family Head: <span className="text-[#0B3D91] font-black">{actualHeadName}</span>
                             </span>
                             <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-slate-200 text-slate-700 rounded-md">
                               {f.family_code}
                             </span>
-                            <span className="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full">
+                            <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-[#0B3D91] rounded-full">
                               {f.area || 'Tenkasi'}
                             </span>
                             <span className="text-xs font-semibold text-slate-500">
@@ -2788,7 +3217,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               }}
                               className="px-3.5 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5 cursor-pointer"
                             >
-                              <Plus className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                              <Plus className="w-3.5 h-3.5 text-blue-400 stroke-[3]" />
                               <span>Add Member to {actualHeadName.split(' ')[0]} Family</span>
                             </button>
                           </div>
@@ -2829,7 +3258,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                             </td>
                                             <td className="py-3 px-4">
                                               {isHead ? (
-                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-[#0B3D91] border border-blue-300">
                                                   Family Head
                                                 </span>
                                               ) : (
@@ -2841,7 +3270,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                             <td className="py-3 px-4 text-slate-700">{m.gender || 'Male'}</td>
                                             <td className="py-3 px-4 font-mono text-slate-700">{m.mobile_number || '—'}</td>
                                             <td className="py-3 px-4">
-                                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+                                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.status === 'Inactive' ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-blue-50 text-[#0B3D91] border-blue-200'}`}>
                                                 {m.status || 'Active'}
                                               </span>
                                             </td>
@@ -2852,10 +3281,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                                     setShowFamilyRosterModal(false);
                                                     handleEditMemberClick(m, f);
                                                   }}
-                                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 text-emerald-800 font-bold text-[11px] transition-colors flex items-center space-x-1 cursor-pointer"
+                                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-[#0B3D91] font-bold text-[11px] transition-colors flex items-center space-x-1 cursor-pointer"
                                                   title="Edit Member Details"
                                                 >
-                                                  <Pencil className="w-3 h-3 text-emerald-600" />
+                                                  <Pencil className="w-3 h-3 text-blue-600" />
                                                   <span>Edit</span>
                                                 </button>
                                                 <button
@@ -2901,7 +3330,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {showAddMemberModal && (
         <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150 font-sans">
-            
+
             {/* Modal Title Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h3 className="text-xl font-extrabold text-slate-900">
@@ -2916,7 +3345,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             </div>
 
             <form onSubmit={handleAddOrEditMember} className="space-y-6 text-xs font-medium">
-              
+
               {/* Row 1: Member ID (Auto-Generated Token), Full Name *, Gender */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -3064,10 +3493,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-3 shadow-md font-sans">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                       <div className="flex items-center space-x-2">
-                        <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xs">
+                        <div className="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs">
                           ₹
                         </div>
-                        <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-blue-400">
                           Family Santha Payment Calculation
                         </h4>
                       </div>
@@ -3083,11 +3512,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       </div>
                       <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                         <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Previously Paid</span>
-                        <span className="text-sm font-black text-emerald-400">₹{totalPaid.toLocaleString()}</span>
+                        <span className="text-sm font-black text-blue-400">₹{totalPaid.toLocaleString()}</span>
                       </div>
                       <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/60">
                         <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Remaining Payable Amount</span>
-                        <span className={`text-sm font-black ${isFullPaid ? 'text-emerald-300' : 'text-rose-400'}`}>
+                        <span className={`text-sm font-black ${isFullPaid ? 'text-blue-300' : 'text-rose-400'}`}>
                           {isFullPaid ? '✓ Full Amount Paid' : `₹${outstanding.toLocaleString()}`}
                         </span>
                       </div>
@@ -3143,7 +3572,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <span>Documents</span>
                   </h4>
                   {selectedMemberFiles.length > 0 && (
-                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-[#0B3D91]">
                       {selectedMemberFiles.length} {selectedMemberFiles.length === 1 ? 'document attached' : 'documents attached'}
                     </span>
                   )}
@@ -3171,11 +3600,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     setIsDraggingDoc(false);
                   }}
                   onDrop={handleMemberFileDrop}
-                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer space-y-2.5 ${
-                    isDraggingDoc
-                      ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01]'
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer space-y-2.5 ${isDraggingDoc
+                      ? 'border-blue-500 bg-blue-50/60 scale-[1.01]'
                       : 'border-slate-200/90 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50'
-                  }`}
+                    }`}
                 >
                   <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center mx-auto shadow-xs">
                     <Upload className="w-5 h-5" />
@@ -3291,7 +3719,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {showCreateFamilyModal && (
         <div className="fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150 font-sans">
-            
+
             {/* Modal Title Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-xl font-extrabold text-slate-900">
@@ -3310,8 +3738,8 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
 
             {/* Notice Alert Banner */}
-            <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80 flex items-center space-x-3 text-xs text-emerald-900 font-medium">
-              <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold shrink-0">
+            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 flex items-center space-x-3 text-xs text-[#0B3D91] font-medium">
+              <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-[#1557C0] font-bold shrink-0">
                 ⓘ
               </div>
               <p>A unique Family ID will be generated automatically upon saving.</p>
@@ -3328,7 +3756,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             )}
 
             <form onSubmit={handleCreateFamily} className="space-y-6 text-xs font-medium">
-              
+
               {/* SECTION 1: FIRST FAMILY MEMBER */}
               <div className="bg-white rounded-2xl border border-slate-200/80 p-5 space-y-4 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -3348,7 +3776,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                             if (fam) handleEditFamilyClick(fam);
                           }
                         }}
-                        className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none shadow-sm"
+                        className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none shadow-sm"
                       >
                         {familiesData.map((f) => (
                           <option key={f.id} value={f.id}>
@@ -3373,7 +3801,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="e.g. Abdul"
                       value={familyForm.first_name}
                       onChange={(e) => setFamilyForm({ ...familyForm, first_name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3387,7 +3815,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="e.g. Rahman"
                       value={familyForm.last_name}
                       onChange={(e) => setFamilyForm({ ...familyForm, last_name: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3396,7 +3824,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <select
                       value={familyForm.status}
                       onChange={(e) => setFamilyForm({ ...familyForm, status: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     >
                       <option value="Active">Active</option>
                       <option value="Inactive">Inactive</option>
@@ -3409,7 +3837,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <select
                       value={familyForm.gender}
                       onChange={(e) => setFamilyForm({ ...familyForm, gender: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
@@ -3429,7 +3857,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       required
                       value={familyForm.dob}
                       onChange={(e) => setFamilyForm({ ...familyForm, dob: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3443,7 +3871,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="+91..."
                       value={familyForm.mobile_number}
                       onChange={(e) => setFamilyForm({ ...familyForm, mobile_number: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3456,7 +3884,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       required
                       value={familyForm.joining_date}
                       onChange={(e) => setFamilyForm({ ...familyForm, joining_date: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -3471,7 +3899,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       required
                       value={familyForm.relationship_type}
                       onChange={(e) => setFamilyForm({ ...familyForm, relationship_type: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium bg-white focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     >
                       <option value="Select Relationship">Select Relationship</option>
                       <option value="Family Head">Family Head</option>
@@ -3490,7 +3918,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="Optional"
                       value={familyForm.aadhar_ref}
                       onChange={(e) => setFamilyForm({ ...familyForm, aadhar_ref: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -3512,7 +3940,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="12/4"
                       value={familyForm.house_no}
                       onChange={(e) => setFamilyForm({ ...familyForm, house_no: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3523,7 +3951,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="Main Street"
                       value={familyForm.street}
                       onChange={(e) => setFamilyForm({ ...familyForm, street: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3534,7 +3962,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="East Area"
                       value={familyForm.area}
                       onChange={(e) => setFamilyForm({ ...familyForm, area: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -3548,7 +3976,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="Tenkasi"
                       value={familyForm.city}
                       onChange={(e) => setFamilyForm({ ...familyForm, city: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3559,7 +3987,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="627811"
                       value={familyForm.pin_code}
                       onChange={(e) => setFamilyForm({ ...familyForm, pin_code: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
 
@@ -3570,17 +3998,17 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       placeholder="Near Masjid"
                       value={familyForm.landmark}
                       onChange={(e) => setFamilyForm({ ...familyForm, landmark: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-emerald-600 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
 
               {/* SECTION 3: SANTHA AMOUNT, DUE DATE & PREVIOUS PAID */}
-              <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-5 space-y-4 font-sans">
+              <div className="bg-blue-50/70 border border-blue-200/90 rounded-2xl p-5 space-y-4 font-sans">
                 {/* Header */}
-                <div className="flex items-center space-x-3 text-[#059669]">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center font-black text-emerald-700 text-base shadow-xs">
+                <div className="flex items-center space-x-3 text-[#1557C0]">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center font-black text-[#0B3D91] text-base shadow-xs">
                     ₹
                   </div>
                   <div>
@@ -3595,7 +4023,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <label className="block text-slate-700 font-bold mb-1.5 text-xs">
                       Monthly Santha (₹) <span className="text-rose-500">*</span>
                     </label>
-                    <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-emerald-600">
+                    <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-blue-600">
                       <span className="px-3 py-2.5 bg-slate-50 text-slate-600 font-bold border-r border-slate-200 text-xs">₹</span>
                       <input
                         type="number"
@@ -3615,7 +4043,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <select
                       value={familyForm.santha_due_day || 10}
                       onChange={(e) => setFamilyForm({ ...familyForm, santha_due_day: parseInt(e.target.value) })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:ring-2 focus:ring-emerald-600 focus:outline-none shadow-xs"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-slate-900 font-bold bg-white text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none shadow-xs"
                     >
                       {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
                         <option key={day} value={day}>
@@ -3629,7 +4057,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <label className="block text-slate-700 font-bold mb-1.5 text-xs">
                       Previous Paid Amount (₹) <span className="text-slate-400 font-normal">(Optional)</span>
                     </label>
-                    <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-emerald-600">
+                    <div className="flex items-center bg-white border border-slate-300 rounded-xl overflow-hidden shadow-xs focus-within:ring-2 focus-within:ring-blue-600">
                       <span className="px-3 py-2.5 bg-slate-50 text-slate-600 font-bold border-r border-slate-200 text-xs">₹</span>
                       <input
                         type="number"
@@ -3676,7 +4104,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                         }
                       }
                     }
-                  } catch (e) {}
+                  } catch (e) { }
 
                   const now = new Date();
                   const targetYear = now.getFullYear();
@@ -3703,7 +4131,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
                   let statusBadgeElement = null;
                   if (isPaidFull) {
-                    statusBadgeElement = <span className="text-emerald-400 font-extrabold text-xs">✓ Full Amount Paid</span>;
+                    statusBadgeElement = <span className="text-blue-400 font-extrabold text-xs">✓ Full Amount Paid</span>;
                   } else if (prevPaid > 0) {
                     statusBadgeElement = <span className="text-amber-400 font-extrabold text-xs">⚡ Partially Paid (₹{netPayable.toLocaleString()} Pending)</span>;
                   } else {
@@ -3713,7 +4141,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   return (
                     <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-3 font-sans shadow-md border border-slate-800">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2 text-xs">
-                        <span className="font-extrabold uppercase tracking-wider text-emerald-400">
+                        <span className="font-extrabold uppercase tracking-wider text-blue-400">
                           Live Santha Calculation (From Joining Date)
                         </span>
                         <span className="text-[11px] text-slate-400 font-semibold">
@@ -3732,7 +4160,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                         </div>
                         <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/60">
                           <span className="text-[10px] text-slate-400 uppercase font-extrabold block tracking-wider">Previously Paid</span>
-                          <span className="text-sm font-black text-emerald-400">₹{prevPaid.toLocaleString()}</span>
+                          <span className="text-sm font-black text-blue-400">₹{prevPaid.toLocaleString()}</span>
                         </div>
                         <div className="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700/60">
                           <span className="text-[10px] text-slate-400 uppercase font-extrabold block tracking-wider">Current Payable Dues</span>
@@ -3760,11 +4188,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`px-6 py-2.5 rounded-xl text-white font-bold shadow-md transition-all flex items-center space-x-2 ${
-                    isSubmitting
-                      ? 'bg-emerald-500 cursor-not-allowed opacity-80'
-                      : 'bg-[#059669] hover:bg-[#047857]'
-                  }`}
+                  className={`px-6 py-2.5 rounded-xl text-white font-bold shadow-md transition-all flex items-center space-x-2 ${isSubmitting
+                      ? 'bg-blue-500 cursor-not-allowed opacity-80'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                 >
                   {isSubmitting ? (
                     <>
@@ -3790,7 +4217,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {selectedFamilyForView && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-5 font-sans max-h-[92vh] overflow-y-auto">
-            
+
             {/* Modal Title Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -3814,16 +4241,19 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
             {/* SANTHA DETAILS CARD */}
             {(() => {
+              const monthlyRate = selectedFamilyForView.monthly_santha || selectedFamilyForView.monthly_rate || selectedFamilyForView.santha_amount || 500;
+              const totalPaid = selectedFamilyForView.total_paid || 0;
               const outstanding = selectedFamilyForView.outstanding_amount ?? selectedFamilyForView.pending_amount ?? 0;
-              const pStatus = selectedFamilyForView.payment_status || (outstanding > 0 ? (selectedFamilyForView.total_paid > 0 ? "Partially Paid" : "Due") : "Paid");
+              const totalDue = selectedFamilyForView.total_santha_due || selectedFamilyForView.total_due || (totalPaid + outstanding) || monthlyRate;
+              const pStatus = selectedFamilyForView.payment_status || (outstanding > 0 ? (totalPaid > 0 ? "Partially Paid" : "Due") : "Paid");
 
               let viewStatusBadge = (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-emerald-50 text-emerald-700 border-emerald-200">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-blue-50 text-[#0B3D91] border-blue-200">
                   ✓ Full Amount Paid
                 </span>
               );
 
-              if (pStatus === "Partially Paid" || (outstanding > 0 && selectedFamilyForView.total_paid > 0)) {
+              if (pStatus === "Partially Paid" || (outstanding > 0 && totalPaid > 0)) {
                 viewStatusBadge = (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border bg-amber-50 text-amber-800 border-amber-300">
                     ⚡ Partially Paid (₹{outstanding.toLocaleString()} Pending)
@@ -3841,7 +4271,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 space-y-4 shadow-md font-sans">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm">
+                      <div className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-sm">
                         ₹
                       </div>
                       <div>
@@ -3854,7 +4284,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <button
                       type="button"
                       onClick={(e) => handleOpenCollectSanthaModal(selectedFamilyForView, e)}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
+                      className="px-4 py-2 bg-[#1557C0] hover:bg-[#0B3D91] text-white font-black rounded-xl text-xs shadow-md transition-all flex items-center space-x-1.5 cursor-pointer"
                     >
                       <CreditCard className="w-4 h-4" />
                       <span>Collect Santha</span>
@@ -3864,15 +4294,15 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                       <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Monthly Rate</span>
-                      <span className="text-base font-black text-white">₹{(selectedFamilyForView.monthly_santha || 200).toLocaleString()}</span>
+                      <span className="text-base font-black text-blue-400">₹{monthlyRate.toLocaleString()}</span>
                     </div>
                     <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                       <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Total Due Amount</span>
-                      <span className="text-base font-black text-white">₹{(selectedFamilyForView.total_santha_due || 0).toLocaleString()}</span>
+                      <span className="text-base font-black text-cyan-300">₹{totalDue.toLocaleString()}</span>
                     </div>
                     <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                       <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Total Paid Amount</span>
-                      <span className="text-base font-black text-emerald-400">₹{(selectedFamilyForView.total_paid || 0).toLocaleString()}</span>
+                      <span className="text-base font-black text-blue-400">₹{totalPaid.toLocaleString()}</span>
                     </div>
                     <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60">
                       <span className="text-[10px] text-slate-400 font-extrabold block uppercase tracking-wider">Remaining Amount</span>
@@ -3887,7 +4317,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     </div>
                     <div className="bg-slate-800/40 p-2.5 rounded-xl flex items-center justify-between border border-slate-800">
                       <span className="text-slate-400 font-bold">Next Due Date:</span>
-                      <span className="text-emerald-400 font-black text-xs">{selectedFamilyForView.next_due_date || `${selectedFamilyForView.santha_due_day || 10}th of every month`}</span>
+                      <span className="text-blue-400 font-black text-xs">{selectedFamilyForView.next_due_date || `${selectedFamilyForView.santha_due_day || 10}th of every month`}</span>
                     </div>
                   </div>
                 </div>
@@ -3902,7 +4332,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               >
                 <div className="flex items-center space-x-2">
                   {isModalMembersExpanded ? (
-                    <ChevronUp className="w-4 h-4 text-emerald-600 font-bold" />
+                    <ChevronUp className="w-4 h-4 text-blue-600 font-bold" />
                   ) : (
                     <ChevronDown className="w-4 h-4 text-slate-600 font-bold" />
                   )}
@@ -3919,11 +4349,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   }}
                   className="px-3.5 py-1.5 bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors flex items-center space-x-1.5"
                 >
-                  <Plus className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                  <Plus className="w-3.5 h-3.5 text-blue-400 stroke-[3]" />
                   <span>Add Member</span>
                 </button>
               </div>
-              
+
               {isModalMembersExpanded && (
                 <div className="pt-2">
                   {loadingMembers ? (
@@ -3957,7 +4387,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               <td className="py-3.5 px-3.5 whitespace-nowrap font-mono font-bold text-slate-700">
                                 {m.member_code || `MM ${selectedFamilyForView.id}-${m.id}`}
                               </td>
-                              <td className="py-3.5 px-3.5 whitespace-nowrap font-extrabold text-slate-900 hover:text-emerald-700 transition-colors">
+                              <td className="py-3.5 px-3.5 whitespace-nowrap font-extrabold text-slate-900 hover:text-blue-700 transition-colors">
                                 {m.full_name}
                               </td>
                               <td className="py-3.5 px-3.5 whitespace-nowrap text-slate-700 font-semibold">
@@ -3971,11 +4401,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               </td>
                               <td className="py-3.5 px-3.5 whitespace-nowrap">
                                 <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                                    m.status === 'Inactive' || m.status === 'Deactive' || m.status === 'Arrears'
+                                  className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${m.status === 'Inactive' || m.status === 'Deactive' || m.status === 'Arrears'
                                       ? 'bg-rose-50 text-rose-600 border-rose-200'
-                                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  }`}
+                                      : 'bg-blue-50 text-[#0B3D91] border-blue-200'
+                                    }`}
                                 >
                                   {m.status || 'Active'}
                                 </span>
@@ -3991,7 +4420,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                   </button>
                                   <button
                                     onClick={(e) => handleEditMemberClick(m, selectedFamilyForView, e)}
-                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-emerald-100 text-emerald-700 transition-colors"
+                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-blue-700 transition-colors"
                                     title="Edit Member Details"
                                   >
                                     <Pencil className="w-3.5 h-3.5" />
@@ -4033,7 +4462,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {selectedMemberForView && (
         <div className="fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150 font-sans">
-            
+
             {/* Title Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-3">
@@ -4062,10 +4491,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
             {/* Profile Grid (All Saved Details View-Only) */}
             <div className="space-y-4 text-xs font-medium">
-              
+
               {/* Card 1: Personal Details */}
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-[#0B3D91]">
                   Personal Profile Information
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -4092,11 +4521,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   <div>
                     <span className="text-slate-500 font-semibold block">Member Status</span>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${
-                        selectedMemberForView.status === 'Inactive' || selectedMemberForView.status === 'Deactive' || selectedMemberForView.status === 'Arrears'
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border mt-0.5 ${selectedMemberForView.status === 'Inactive' || selectedMemberForView.status === 'Deactive' || selectedMemberForView.status === 'Arrears'
                           ? 'bg-rose-50 text-rose-600 border-rose-200'
-                          : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      }`}
+                          : 'bg-blue-50 text-[#0B3D91] border-blue-200'
+                        }`}
                     >
                       {selectedMemberForView.status || 'Active'}
                     </span>
@@ -4106,7 +4534,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               {/* Card 2: Contact & Identification */}
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-[#0B3D91]">
                   Contact & Additional Information
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -4139,7 +4567,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               {/* Card 3: Residence Address */}
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-[#0B3D91]">
                   Family Residence Address
                 </h4>
                 <p className="font-bold text-slate-900">
@@ -4154,9 +4582,9 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleEditMemberClick(selectedMemberForView)}
-                  className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-[#0B3D91] border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer"
                 >
-                  <Pencil className="w-3.5 h-3.5 text-emerald-600" />
+                  <Pencil className="w-3.5 h-3.5 text-blue-600" />
                   <span>Edit Member Details</span>
                 </button>
 
@@ -4187,7 +4615,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {memberToDelete && (
         <div className="fixed inset-0 z-[80] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
-            
+
             {/* Header / Icon */}
             <div className="flex items-start space-x-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
@@ -4218,7 +4646,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   {memberToDelete.member.member_code || `MM ${memberToDelete.member.family_id}-${memberToDelete.member.id}`}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-slate-600 font-medium text-[11px] pt-1 border-t border-slate-200/60">
                 <div>
                   <span className="text-slate-400 block text-[10px]">Relationship</span>
@@ -4284,7 +4712,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {familyToDelete && (
         <div className="fixed inset-0 z-[80] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
-            
+
             {/* Header / Icon */}
             <div className="flex items-start space-x-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0 shadow-sm">
@@ -4315,7 +4743,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   {familyToDelete.family_code}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2 text-slate-600 font-medium text-[11px] pt-1 border-t border-slate-200/60">
                 <div>
                   <span className="text-slate-400 block text-[10px]">Family Head</span>
@@ -4388,12 +4816,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
         return (
           <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
             <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
-              
+
               {/* Modal Header */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <span className="text-xs font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                       {selectedHeadChangeComparison.reason || 'Head & Record Modification'}
                     </span>
                     <span className="text-xs text-slate-400 font-medium">• Changed On: {formattedDate}</span>
@@ -4416,7 +4844,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               {/* Side-By-Side Comparison Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-medium">
-                
+
                 {/* LEFT SIDE: PREVIOUS SAVED DETAILS (OLD) */}
                 <div className="bg-slate-50/90 rounded-2xl p-5 border border-slate-200 space-y-4 shadow-sm relative">
                   <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
@@ -4473,45 +4901,45 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 </div>
 
                 {/* RIGHT SIDE: CURRENT MODIFIED DETAILS (NEW) */}
-                <div className="bg-emerald-50/40 rounded-2xl p-5 border border-emerald-200/80 space-y-4 shadow-sm relative">
-                  <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
-                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-wider bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-300">
+                <div className="bg-blue-50/40 rounded-2xl p-5 border border-blue-200/80 space-y-4 shadow-sm relative">
+                  <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
+                    <span className="text-[11px] font-black text-blue-800 uppercase tracking-wider bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
                       ➡️ Current Modified Details (New)
                     </span>
-                    <span className="text-[10px] text-emerald-700 font-bold">Updated DB Record</span>
+                    <span className="text-[10px] text-blue-700 font-bold">Updated DB Record</span>
                   </div>
 
                   <div className="space-y-3">
-                    <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-0.5 shadow-sm">
-                      <span className="text-[10px] font-semibold text-emerald-700 uppercase block">Family Head Name</span>
-                      <p className="text-sm font-black text-emerald-700">
+                    <div className="p-3 bg-white rounded-xl border border-blue-200 space-y-0.5 shadow-sm">
+                      <span className="text-[10px] font-semibold text-blue-700 uppercase block">Family Head Name</span>
+                      <p className="text-sm font-black text-blue-700">
                         {newSnap.head_name || selectedHeadChangeComparison.new_head || '—'}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="p-2.5 bg-white rounded-xl border border-emerald-200">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-200">
                         <span className="text-[10px] font-semibold text-slate-400 block">Mobile Number</span>
                         <span className="font-mono font-bold text-slate-900">{newSnap.mobile_number || '—'}</span>
                       </div>
-                      <div className="p-2.5 bg-white rounded-xl border border-emerald-200">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-200">
                         <span className="text-[10px] font-semibold text-slate-400 block">Relationship</span>
                         <span className="font-bold text-slate-900">{newSnap.relationship_type || 'Family Head'}</span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2">
-                      <div className="p-2.5 bg-white rounded-xl border border-emerald-200">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-200">
                         <span className="text-[10px] font-semibold text-slate-400 block">Gender & DOB</span>
                         <span className="font-bold text-slate-900">{newSnap.gender || 'Male'} • {newSnap.dob || '—'}</span>
                       </div>
-                      <div className="p-2.5 bg-white rounded-xl border border-emerald-200">
+                      <div className="p-2.5 bg-white rounded-xl border border-blue-200">
                         <span className="text-[10px] font-semibold text-slate-400 block">Monthly Santha</span>
-                        <span className="font-bold text-emerald-700">₹{newSnap.monthly_santha || 500}</span>
+                        <span className="font-bold text-blue-700">₹{newSnap.monthly_santha || 500}</span>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-0.5">
+                    <div className="p-3 bg-white rounded-xl border border-blue-200 space-y-0.5">
                       <span className="text-[10px] font-semibold text-slate-400 uppercase block">Residence Address</span>
                       <p className="font-bold text-slate-900">
                         {[newSnap.house_no, newSnap.street, newSnap.area, newSnap.city].filter(Boolean).join(', ') || 'Tenkasi Area'}
@@ -4519,9 +4947,9 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     </div>
 
                     {newSnap.receipt_no && (
-                      <div className="p-3 bg-emerald-100/60 rounded-xl border border-emerald-300 space-y-1">
-                        <span className="text-[10px] font-black text-emerald-800 uppercase tracking-wider block">Santha Payment Record Details</span>
-                        <div className="text-xs font-bold text-emerald-900 grid grid-cols-2 gap-1">
+                      <div className="p-3 bg-blue-100/60 rounded-xl border border-blue-300 space-y-1">
+                        <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider block">Santha Payment Record Details</span>
+                        <div className="text-xs font-bold text-blue-900 grid grid-cols-2 gap-1">
                           <span>Amount: ₹{newSnap.collected_amount ? Number(newSnap.collected_amount).toLocaleString('en-IN') : '0'}</span>
                           <span>Receipt: {newSnap.receipt_no}</span>
                           <span>Method: {newSnap.payment_method || 'Cash'}</span>
@@ -4530,9 +4958,9 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                       </div>
                     )}
 
-                    <div className="p-2.5 bg-white rounded-xl border border-emerald-200 flex items-center justify-between">
+                    <div className="p-2.5 bg-white rounded-xl border border-blue-200 flex items-center justify-between">
                       <span className="text-[10px] font-semibold text-slate-400">Record Status:</span>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-300">
                         {newSnap.status || 'Active'}
                       </span>
                     </div>
@@ -4561,7 +4989,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {selectedFamilyStatement && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto font-sans">
           <div className="bg-white rounded-3xl max-w-5xl w-full p-5 sm:p-7 md:p-8 shadow-2xl space-y-6 my-8 max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150 border border-slate-200">
-            
+
             {/* Modal Title & Action Bar */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center space-x-3">
@@ -4581,9 +5009,9 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => window.print()}
-                  className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
+                  className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 shadow-sm"
                 >
-                  <Printer className="w-3.5 h-3.5 text-emerald-600" />
+                  <Printer className="w-3.5 h-3.5 text-blue-600" />
                   <span>Print Statement</span>
                 </button>
 
@@ -4599,7 +5027,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             {/* SECTION 1: COMPLETE FAMILY DETAILS */}
             <div className="bg-slate-50/80 rounded-2xl p-5 border border-slate-200/80 space-y-3 text-xs font-medium">
               <div className="flex items-center justify-between border-b border-slate-200/60 pb-2">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-blue-700">
                   Section 1: Complete Family Profile Information
                 </h4>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white text-slate-700 border border-slate-200">
@@ -4645,17 +5073,16 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             {/* SECTION 2: FINANCIAL & COLLECTION SUMMARY LEDGER */}
             <div className="bg-white rounded-2xl p-5 border border-slate-200 space-y-3 text-xs font-medium shadow-sm">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-blue-700">
                   Section 2: Collection & Payment Ledger Summary
                 </h4>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
-                    selectedFamilyStatement.payment_status === 'Paid in Full'
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  className={`px-3 py-1 rounded-full text-xs font-extrabold border ${selectedFamilyStatement.payment_status === 'Paid in Full'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
                       : selectedFamilyStatement.payment_status === 'Overdue / Arrears'
-                      ? 'bg-rose-50 text-rose-700 border-rose-200'
-                      : 'bg-amber-50 text-amber-700 border-amber-200'
-                  }`}
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}
                 >
                   Status: {selectedFamilyStatement.payment_status}
                 </span>
@@ -4671,13 +5098,13 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   <span className="text-base font-extrabold text-slate-900">₹{selectedFamilyStatement.annual_required}</span>
                   <span className="text-[9px] font-semibold text-slate-400 block">({selectedFamilyStatement.applicable_months || 1} Month{selectedFamilyStatement.applicable_months > 1 ? 's' : ''})</span>
                 </div>
-                <div className="p-3 bg-emerald-50/60 rounded-xl border border-emerald-100">
-                  <span className="text-[10px] font-bold text-emerald-700 uppercase block">Total Paid Amount</span>
-                  <span className="text-base font-extrabold text-emerald-700">₹{selectedFamilyStatement.total_paid}</span>
+                <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100">
+                  <span className="text-[10px] font-bold text-blue-700 uppercase block">Total Paid Amount</span>
+                  <span className="text-base font-extrabold text-blue-700">₹{selectedFamilyStatement.total_paid}</span>
                 </div>
-                <div className={`p-3 rounded-xl border ${selectedFamilyStatement.pending_amount > 0 ? 'bg-rose-50/60 border-rose-100' : 'bg-emerald-50/60 border-emerald-100'}`}>
-                  <span className={`text-[10px] font-bold uppercase block ${selectedFamilyStatement.pending_amount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>Pending / Unpaid Dues</span>
-                  <span className={`text-base font-extrabold ${selectedFamilyStatement.pending_amount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>₹{selectedFamilyStatement.pending_amount}</span>
+                <div className={`p-3 rounded-xl border ${selectedFamilyStatement.pending_amount > 0 ? 'bg-rose-50/60 border-rose-100' : 'bg-blue-50/60 border-blue-100'}`}>
+                  <span className={`text-[10px] font-bold uppercase block ${selectedFamilyStatement.pending_amount > 0 ? 'text-rose-600' : 'text-blue-700'}`}>Pending / Unpaid Dues</span>
+                  <span className={`text-base font-extrabold ${selectedFamilyStatement.pending_amount > 0 ? 'text-rose-600' : 'text-blue-700'}`}>₹{selectedFamilyStatement.pending_amount}</span>
                 </div>
               </div>
 
@@ -4697,7 +5124,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             {/* SECTION 3: COMPLETE FAMILY MEMBERS ROSTER & PAYMENT BREAKDOWN */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-emerald-700">
+                <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px] text-blue-700">
                   Section 3: Family Members Breakdown ({selectedFamilyStatement.members ? selectedFamilyStatement.members.length : selectedFamilyStatement.member_count} Total Members)
                 </h4>
               </div>
@@ -4724,7 +5151,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           <td className="py-3 px-4 font-bold text-slate-900 flex items-center space-x-1.5">
                             <span>{m.full_name}</span>
                             {m.is_head && (
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">HEAD</span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-blue-100 text-blue-800 border border-blue-200">HEAD</span>
                             )}
                           </td>
                           <td className="py-3 px-4 text-slate-700">{m.relationship_type}</td>
@@ -4740,13 +5167,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           </td>
                           <td className="py-3 px-4 text-right">
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                m.payment_status === 'Paid'
-                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${m.payment_status === 'Paid'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
                                   : m.payment_status === 'Pending'
-                                  ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                  : 'bg-slate-50 text-slate-600 border-slate-200'
-                              }`}
+                                    ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                }`}
                             >
                               {m.payment_status}
                             </span>
@@ -4788,11 +5214,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {showFamilyActivityModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            
+
             {/* Modal Top Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
                   <Building2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -4800,7 +5226,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                     <h2 className="text-base font-extrabold text-white">
                       {activityData?.family?.family_name || 'Family Profile & Activity History'}
                     </h2>
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-emerald-400 border border-slate-700">
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-800 text-blue-400 border border-slate-700">
                       {activityData?.family?.family_code || '—'}
                     </span>
                   </div>
@@ -4822,23 +5248,21 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             <div className="px-6 py-3 bg-slate-50 border-b border-slate-200/80 flex items-center space-x-2 overflow-x-auto shrink-0">
               <button
                 onClick={() => setActivityActiveTab('daily')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
-                  activityActiveTab === 'daily'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${activityActiveTab === 'daily'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
+                  }`}
               >
-                <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                <Calendar className="w-3.5 h-3.5 text-blue-400" />
                 <span>1. Daily Activities</span>
               </button>
 
               <button
                 onClick={() => setActivityActiveTab('changes')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
-                  activityActiveTab === 'changes'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${activityActiveTab === 'changes'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
+                  }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>2. Family & Member Changes ({(activityData?.head_changes?.length || 0) + (activityData?.members?.length || 0)})</span>
@@ -4846,11 +5270,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               <button
                 onClick={() => setActivityActiveTab('payments')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
-                  activityActiveTab === 'payments'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${activityActiveTab === 'payments'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
+                  }`}
               >
                 <Wallet className="w-3.5 h-3.5" />
                 <span>3. Payment Tracking ({(activityData?.collections?.length || 0)})</span>
@@ -4858,11 +5281,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               <button
                 onClick={() => setActivityActiveTab('functions')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
-                  activityActiveTab === 'functions'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${activityActiveTab === 'functions'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
+                  }`}
               >
                 <Heart className="w-3.5 h-3.5" />
                 <span>4. Functions & Events ({(activityData?.functions?.length || 0)})</span>
@@ -4870,11 +5292,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
               <button
                 onClick={() => setActivityActiveTab('summary')}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${
-                  activityActiveTab === 'summary'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 shrink-0 ${activityActiveTab === 'summary'
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-200/60'
-                }`}
+                  }`}
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>5. Weekly Summary</span>
@@ -4909,7 +5330,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           title: `Santha Payment from ${c.member_name}`,
                           details: `Paid Amount: ₹${c.amount?.toLocaleString()} • Method: ${c.payment_method} • Receipt: ${c.receipt_no}`,
                           amount: c.amount,
-                          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                          badge: 'bg-blue-50 text-blue-700 border-blue-200',
                           user: 'Admin User'
                         });
                       }
@@ -4935,7 +5356,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
                         if (isInitial) {
                           eventType = 'Family Head Registration';
-                          badgeStyle = 'bg-emerald-50 text-emerald-800 border-emerald-300 font-extrabold';
+                          badgeStyle = 'bg-blue-50 text-blue-800 border-blue-300 font-extrabold';
                           detailsText = `Registered Family Head: ${hc.new_head} (Initial Registration Baseline)`;
                         } else if (isHeadReplaced) {
                           eventType = 'Leadership Succession';
@@ -5032,7 +5453,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                             {dates.map((dateStr) => (
                               <div key={dateStr} className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs space-y-3">
                                 <div className="flex items-center space-x-2 border-b border-slate-100 pb-2">
-                                  <Calendar className="w-4 h-4 text-emerald-600" />
+                                  <Calendar className="w-4 h-4 text-blue-600" />
                                   <span className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">{dateStr}</span>
                                   <span className="text-[10px] text-slate-400 font-bold">({grouped[dateStr].length} events)</span>
                                 </div>
@@ -5052,7 +5473,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
                                       <div className="text-right shrink-0">
                                         {item.amount > 0 && (
-                                          <div className="font-extrabold text-emerald-700 text-sm">₹{item.amount.toLocaleString()}</div>
+                                          <div className="font-extrabold text-blue-700 text-sm">₹{item.amount.toLocaleString()}</div>
                                         )}
                                         <span className="text-[10px] text-slate-400 font-medium">By: {item.user}</span>
                                       </div>
@@ -5121,11 +5542,10 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                               <div key={hc.id} className="p-4 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
                                   <div className="flex items-center space-x-2">
-                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                                      isHeadReplaced
+                                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${isHeadReplaced
                                         ? 'bg-amber-50 text-amber-800 border-amber-300'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                    }`}>
+                                        : 'bg-blue-50 text-blue-700 border-blue-200'
+                                      }`}>
                                       {isHeadReplaced ? 'Leadership Replaced' : isInitial ? 'Initial Family Head Registration' : 'Family Head Record'}
                                     </span>
                                     <span className="font-extrabold text-slate-900">{hc.family_name}</span>
@@ -5143,7 +5563,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                     </div>
                                     <div className="bg-white p-3 rounded-xl border border-slate-200/70">
                                       <span className="text-[10px] font-semibold text-slate-400 block uppercase">Current Head</span>
-                                      <span className="font-bold text-emerald-700 text-xs">{hc.new_head}</span>
+                                      <span className="font-bold text-blue-700 text-xs">{hc.new_head}</span>
                                     </div>
                                   </div>
                                 ) : (
@@ -5180,7 +5600,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                 <div><span className="text-slate-400 font-semibold">Gender:</span> <span className="font-bold text-slate-800">{m.gender}</span></div>
                                 <div><span className="text-slate-400 font-semibold">Mobile:</span> <span className="font-mono font-bold text-slate-800">{m.mobile_number}</span></div>
                                 <div><span className="text-slate-400 font-semibold">Occupation:</span> <span className="font-bold text-slate-800">{m.occupation}</span></div>
-                                <div><span className="text-slate-400 font-semibold">Status:</span> <span className="font-extrabold text-emerald-700">{m.status}</span></div>
+                                <div><span className="text-slate-400 font-semibold">Status:</span> <span className="font-extrabold text-blue-700">{m.status}</span></div>
                               </div>
                             </div>
                           ))}
@@ -5207,7 +5627,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           </div>
                           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
                             <span className="text-[10px] font-bold text-slate-400 uppercase block">Individual Payments</span>
-                            <span className="text-base font-extrabold text-emerald-700">₹{santhaTotal.toLocaleString()}</span>
+                            <span className="text-base font-extrabold text-blue-700">₹{santhaTotal.toLocaleString()}</span>
                           </div>
                           <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs">
                             <span className="text-[10px] font-bold text-slate-400 uppercase block">Advance Payments</span>
@@ -5233,7 +5653,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                 Detailed tracking of all payments, receipts, and payment methods recorded this week.
                               </p>
                             </div>
-                            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
                               Total Collected: ₹{grandTotal.toLocaleString()}
                             </span>
                           </div>
@@ -5264,12 +5684,12 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                       <tr key={`col-${c.id}`} className="hover:bg-slate-50">
                                         <td className="py-3 px-3 font-semibold text-slate-800">{c.collection_date}</td>
                                         <td className="py-3 px-3 font-extrabold text-slate-900">{c.member_name}</td>
-                                        <td className="py-3 px-3 font-semibold text-emerald-700">Weekly Santha Payment</td>
-                                        <td className="py-3 px-3 font-black text-emerald-700">₹{c.amount?.toLocaleString()}</td>
+                                        <td className="py-3 px-3 font-semibold text-blue-700">Weekly Santha Payment</td>
+                                        <td className="py-3 px-3 font-black text-blue-700">₹{c.amount?.toLocaleString()}</td>
                                         <td className="py-3 px-3 font-semibold text-slate-700">{c.payment_method}</td>
                                         <td className="py-3 px-3 font-mono font-bold text-slate-600">{c.receipt_no}</td>
                                         <td className="py-3 px-3">
-                                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
                                             Paid
                                           </span>
                                         </td>
@@ -5284,7 +5704,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                         <td className="py-3 px-3 font-semibold text-slate-700">{fn.payment_method}</td>
                                         <td className="py-3 px-3 font-mono font-bold text-slate-600">{fn.receipt_no}</td>
                                         <td className="py-3 px-3">
-                                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
                                             {fn.status}
                                           </span>
                                         </td>
@@ -5346,12 +5766,11 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                                   <td className="py-3 px-3 font-semibold text-slate-800">{fn.member_name}</td>
                                   <td className="py-3 px-3 text-slate-600">{fn.event_date}</td>
                                   <td className="py-3 px-3 font-extrabold text-slate-900">₹{fn.amount?.toLocaleString()}</td>
-                                  <td className="py-3 px-3 font-extrabold text-emerald-700">₹{fn.paid_amount?.toLocaleString()}</td>
+                                  <td className="py-3 px-3 font-extrabold text-blue-700">₹{fn.paid_amount?.toLocaleString()}</td>
                                   <td className="py-3 px-3 font-extrabold text-rose-600">₹{fn.balance?.toLocaleString()}</td>
                                   <td className="py-3 px-3">
-                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                                      fn.status === 'Paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'
-                                    }`}>
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${fn.status === 'Paid' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-amber-50 text-amber-700 border-amber-200'
+                                      }`}>
                                       {fn.status}
                                     </span>
                                   </td>
@@ -5392,7 +5811,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
 
                           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-2xs space-y-1">
                             <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Individual Payments</span>
-                            <div className="text-2xl font-black text-emerald-700">₹{totalSanthaPaid.toLocaleString()}</div>
+                            <div className="text-2xl font-black text-blue-700">₹{totalSanthaPaid.toLocaleString()}</div>
                             <span className="text-[10px] text-slate-400 font-medium">{collections.length} Payments Logged</span>
                           </div>
 
@@ -5427,7 +5846,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                           </div>
 
                           <div className="col-span-2 bg-[#0f172a] text-white rounded-2xl p-4 shadow-md space-y-1">
-                            <span className="text-[10px] font-extrabold text-emerald-400 uppercase tracking-wider block">Total Collection Amount</span>
+                            <span className="text-[10px] font-extrabold text-blue-400 uppercase tracking-wider block">Total Collection Amount</span>
                             <div className="text-2xl font-black text-white">₹{grandTotal.toLocaleString()}</div>
                             <span className="text-[10px] text-slate-300 font-medium">Grand Total Collections</span>
                           </div>
@@ -5438,7 +5857,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                             <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                               Family Head & Profile Summary
                             </h3>
-                            <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-blue-50 text-blue-700 border border-blue-200">
                               Status: {activityData.family.status}
                             </span>
                           </div>
@@ -5484,7 +5903,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
       {showCollectSanthaModal && collectFamily && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto font-sans">
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl space-y-5 my-8 border border-slate-200">
-            
+
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-lg font-black text-slate-900">Collect Santha Payment</h3>
@@ -5514,7 +5933,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
             ) : (
               <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-3 shadow-sm text-xs">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <span className="font-bold text-emerald-400">
+                  <span className="font-bold text-blue-400">
                     Joining Date: {collectCalcData?.joining_date || collectFamily.joining_date || '—'}
                   </span>
                   <span className="text-[11px] text-slate-400">
@@ -5529,7 +5948,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                   </div>
                   <div className="bg-slate-800/80 p-2.5 rounded-xl">
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">Total Paid</span>
-                    <span className="text-sm font-black text-emerald-400">₹{(collectCalcData?.total_paid ?? collectFamily.total_paid ?? 0).toLocaleString()}</span>
+                    <span className="text-sm font-black text-blue-400">₹{(collectCalcData?.total_paid ?? collectFamily.total_paid ?? 0).toLocaleString()}</span>
                   </div>
                   <div className="bg-slate-800/80 p-2.5 rounded-xl">
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">Outstanding</span>
@@ -5564,9 +5983,9 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 const payingAmt = parseFloat(collectSanthaForm.amount || 0);
                 const remaining = Math.max(0, currentOutstanding - payingAmt);
                 return (
-                  <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-xs">
+                  <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-3 flex items-center justify-between text-xs">
                     <span className="text-slate-700 font-bold">Remaining Outstanding After Payment:</span>
-                    <span className="text-sm font-black text-emerald-800">
+                    <span className="text-sm font-black text-blue-800">
                       ₹{remaining.toLocaleString()} {remaining === 0 ? '(Paid in Full)' : ''}
                     </span>
                   </div>
@@ -5650,7 +6069,7 @@ export const CommunityPage = ({ activeSubTab = 'families' }) => {
                 <button
                   type="submit"
                   disabled={collectSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-md flex items-center space-x-2 disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-md flex items-center space-x-2 disabled:opacity-50"
                 >
                   {collectSubmitting ? (
                     <span>Saving Payment...</span>
